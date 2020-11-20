@@ -200,12 +200,19 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
     return [], closedSet
 
 
+  
+# --------------------------------------------------------------------------------------------
+#  MAIN
+# --------------------------------------------------------------------------------------------
+   
+
+
 # Define the start and end goal
 start = (0,0)
-goal = (50,80)
+goal = (20,40)
 
  
-resize_factor = 3 # Resize occupancy grid
+resize_factor = 6 # Resize occupancy grid
 occupancy_grid = get_map('map.jpg',resize_factor)
 max_x, max_y = occupancy_grid.shape # Size of the map
 max_val = [max_x,max_y]
