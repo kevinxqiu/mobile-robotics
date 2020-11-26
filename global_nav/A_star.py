@@ -24,18 +24,18 @@ def create_empty_plot(max_val):
     """
     fig, ax = plt.subplots(figsize=(7,7))
     
-    major_xticks = np.arange(0, max_val[1]+1, 5)
-    minor_xticks = np.arange(0, max_val[1]+1, 1)
-    major_yticks = np.arange(0, max_val[0]+1, 5)
-    minor_yticks = np.arange(0, max_val[0]+1, 1)
+    major_xticks = np.arange(0, max_val[0]+1, 5)
+    minor_xticks = np.arange(0, max_val[0]+1, 1)
+    major_yticks = np.arange(0, max_val[1]+1, 5)
+    minor_yticks = np.arange(0, max_val[1]+1, 1)
     ax.set_xticks(major_xticks)
     ax.set_xticks(minor_xticks, minor=True)
     ax.set_yticks(major_yticks)
     ax.set_yticks(minor_yticks, minor=True)
     ax.grid(which='minor', alpha=0.2)
     ax.grid(which='major', alpha=0.5)
-    ax.set_ylim([-1,max_val[0]])
-    ax.set_xlim([-1,max_val[1]])
+    ax.set_ylim([-1,max_val[1]])
+    ax.set_xlim([-1,max_val[0]])
     ax.grid(True)
     
     return fig, ax
@@ -44,14 +44,11 @@ def get_map(image,factor):
     img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
     
     new_img = cv2.resize(img,(int(img.shape[1]/factor),int(img.shape[0]/factor)))
-    
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
-    
     thresh[thresh == 255] = 1 
-    
     thresh = np.asarray(thresh)
     
-     #plt.imshow(thresh)
+    #plt.imshow(thresh)
     return thresh
 
 
@@ -204,19 +201,14 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
 # --------------------------------------------------------------------------------------------
 #  MAIN
 # --------------------------------------------------------------------------------------------
-   
-
-
 # Define the start and end goal
 start = (0,0)
-goal = (20,40)
-
+goal = (55,70)
  
 resize_factor = 6 # Resize occupancy grid
 occupancy_grid = get_map('map.jpg',resize_factor)
 max_x, max_y = occupancy_grid.shape # Size of the map
 max_val = [max_x,max_y]
-
 
 # List of all coordinates in the grid
 x,y = np.mgrid[0:max_x:1, 0:max_y:1]
@@ -237,8 +229,9 @@ visitedNodes = np.array(visitedNodes).reshape(-1, 2).transpose()
 # Displaying the map
 cmap = colors.ListedColormap(['white', 'red']) # Select the colors with which to display obstacles and free cells
 fig_astar, ax_astar = create_empty_plot(max_val)
-ax_astar.imshow(occupancy_grid, cmap=cmap)
+ax_astar.imshow(occupancy_grid.transpose(), cmap=cmap)
 plt.title("Map : free cells in white, occupied cells in red");
+
 
 # Plot the best path found and the list of visited nodes
 ax_astar.scatter(visitedNodes[0], visitedNodes[1], marker="o", color = 'orange');
