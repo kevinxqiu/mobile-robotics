@@ -72,6 +72,8 @@ while(True):
     pos, vec = detect_thymio(frame)
 
     # Display the resulting frame
+    frame = cv2.flip(frame,0)
+    frame = cv2.flip(frame,1)
     cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
