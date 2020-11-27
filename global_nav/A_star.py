@@ -11,19 +11,18 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 import cv2
 
-
 # -----------------------------------------
 # FUNCTIONS
 # -----------------------------------------
 def create_empty_plot(max_val):
     """
     Helper function to create a figure of the desired dimensions & grid
-    
+
     :param max_val: dimension of the map along the x and y dimensions
     :return: the fig and ax objects.
     """
     fig, ax = plt.subplots(figsize=(7,7))
-    
+
     major_xticks = np.arange(0, max_val[0]+1, 5)
     minor_xticks = np.arange(0, max_val[0]+1, 1)
     major_yticks = np.arange(0, max_val[1]+1, 5)
@@ -37,17 +36,17 @@ def create_empty_plot(max_val):
     ax.set_ylim([-1,max_val[1]])
     ax.set_xlim([-1,max_val[0]])
     ax.grid(True)
-    
+
     return fig, ax
 
 def get_map(image,factor):
     img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-    
+
     new_img = cv2.resize(img,(int(img.shape[1]/factor),int(img.shape[0]/factor)))
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
-    thresh[thresh == 255] = 1 
+    thresh[thresh == 255] = 1
     thresh = np.asarray(thresh)
-    
+
     #plt.imshow(thresh)
     return thresh
 
@@ -77,13 +76,13 @@ def _get_movements_8n():
             (-1, 1, s2),
             (-1, -1, s2),
             (1, -1, s2)]
-    
-    
+
+
 def reconstruct_path(cameFrom, current):
     """
     Recurrently reconstructs the path from start node to the current node
-    :param cameFrom: map (dictionary) containing for each node n the node immediately 
-                     preceding it on the cheapest path from start to n 
+    :param cameFrom: map (dictionary) containing for each node n the node immediately
+                     preceding it on the cheapest path from start to n
                      currently known.
     :param current: current node (x, y)
     :return: list of nodes from start to current node
@@ -91,7 +90,7 @@ def reconstruct_path(cameFrom, current):
     total_path = [current]
     while current in cameFrom.keys():
         # Add where the current node came from to the start of the list
-        total_path.insert(0, cameFrom[current]) 
+        total_path.insert(0, cameFrom[current])
         current=cameFrom[current]
     return total_path
 
@@ -107,20 +106,20 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
     :param movement: select between 4-connectivity ('4N') and 8-connectivity ('8N', default)
     :return: a tuple that contains: (the resulting path in meters, the resulting path in data array indices)
     """
-    
+
     print("Starting path planning using A*...")
     # Check if the start and goal are within the boundaries of the map
     for point in [start, goal]:
         assert point[0]>=0 and point[0]<max_val[0], "start or end goal not contained in the map"
         assert point[1]>=0 and point[1]<max_val[1], "start or end goal not contained in the map"
-            
+
     # check if start and goal nodes correspond to free spaces
     if occupancy_grid[start[0], start[1]]:
         raise Exception('Start node is not traversable')
 
     if occupancy_grid[goal[0], goal[1]]:
         raise Exception('Goal node is not traversable')
-    
+
     # get the possible movements corresponding to the selected connectivity
     if movement_type == '4N':
         movements = _get_movements_4n()
@@ -128,15 +127,15 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
         movements = _get_movements_8n()
     else:
         raise ValueError('Unknown movement')
-    
+
     # --------------------------------------------------------------------------------------------
     # A* Algorithm implementation - feel free to change the structure / use another pseudo-code
     # --------------------------------------------------------------------------------------------
-    
+
     # The set of visited nodes that need to be (re-)expanded, i.e. for which the neighbors need to be explored
     # Initially, only the start node is known.
     openSet = [start]
-    
+
     # The set of visited nodes that no longer need to be expanded.
     closedSet = []
 
@@ -153,39 +152,39 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
 
     # while there are still elements to investigate
     while openSet != []:
-        
+
         #the node in openSet having the lowest fScore[] value
         fScore_openSet = {key:val for (key,val) in fScore.items() if key in openSet}
         current = min(fScore_openSet, key=fScore_openSet.get)
         del fScore_openSet
-        
+
         #If the goal is reached, reconstruct and return the obtained path
         if current == goal:
             return reconstruct_path(cameFrom, current), closedSet
 
         openSet.remove(current)
         closedSet.append(current)
-        
+
         #for each neighbor of current:
         for dx, dy, deltacost in movements:
-            
+
             neighbor = (current[0]+dx, current[1]+dy)
-            
+
             # if the node is not in the map, skip
             if (neighbor[0] >= occupancy_grid.shape[0]) or (neighbor[1] >= occupancy_grid.shape[1]) or (neighbor[0] < 0) or (neighbor[1] < 0):
                 continue
-            
+
             # if the node is occupied or has already been visited, skip
-            if (occupancy_grid[neighbor[0], neighbor[1]]) or (neighbor in closedSet): 
+            if (occupancy_grid[neighbor[0], neighbor[1]]) or (neighbor in closedSet):
                 continue
-                
+
             # d(current,neighbor) is the weight of the edge from current to neighbor
             # tentative_gScore is the distance from start to the neighbor through current
             tentative_gScore = gScore[current] + deltacost
-            
+
             if neighbor not in openSet:
                 openSet.append(neighbor)
-                
+
             if tentative_gScore < gScore[neighbor]:
                 # This path to neighbor is better than any previous one. Record it!
                 cameFrom[neighbor] = current
@@ -197,14 +196,14 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
     return [], closedSet
 
 
-  
+
 # --------------------------------------------------------------------------------------------
 #  MAIN
 # --------------------------------------------------------------------------------------------
 # Define the start and end goal
 start = (0,0)
 goal = (55,70)
- 
+
 resize_factor = 6 # Resize occupancy grid
 occupancy_grid = get_map('map.jpg',resize_factor)
 max_x, max_y = occupancy_grid.shape # Size of the map
@@ -238,3 +237,5 @@ ax_astar.scatter(visitedNodes[0], visitedNodes[1], marker="o", color = 'orange')
 ax_astar.plot(path[0], path[1], marker="o", color = 'blue');
 ax_astar.scatter(start[0], start[1], marker="o", color = 'green', s=200);
 ax_astar.scatter(goal[0], goal[1], marker="o", color = 'purple', s=200);
+
+plt.show()
