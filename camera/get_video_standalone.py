@@ -101,28 +101,22 @@ pixel2mmy = 2.1
 #=============================================================================================================================================================================================='
 #   MAIN LOOP
 #=============================================================================================================================================================================================='
-
 cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 
-def init_video(cap, save_img):
-    # First we get the warped image
-    ret, frame = cap.read()
-    pts = get_corners(frame) # will be used to unwarp all images from live feed
-    #print(pts)
-    
-    if save_img:
-        warped = unwarp.four_point_transform(frame, pts)
-        # show and save the warped image
-        cv2.imshow("Warped", warped)
-        cv2.imwrite('warped-img.jpg',warped)
-    
-    return cap, pts
+# First we get the warped image
+ret, frame = cap.read()
+pts = get_corners(frame) # will be used to unwarp all images from live feed
+#print(pts)
 
+#warped = unwarp.four_point_transform(frame, pts)
+# show and save the warped image
+#cv2.imshow("Warped", warped)
+#cv2.imwrite('warped-img.jpg',warped)
 
+# initialize position
+newPos = np.zeros((4,1))
 
-def get_video(cap, pts):
-    # initialize position
-    newPos = np.zeros((4,1))
+while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
     #frame = cv2.flip(frame,0)
@@ -131,6 +125,7 @@ def get_video(cap, pts):
     warped = unwarp.four_point_transform(frame, pts)
     # Detect Thymio location
     pos, vec = detect_thymio(warped,pixel2mmx,pixel2mmy)
+    
     
     if pos != []:
         newPos[0] = pos[0]
@@ -148,7 +143,10 @@ def get_video(cap, pts):
     # Print original live video feed
     cv2.imshow('Image',img)
 
-    return pos
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+   
+    sleep(0.1)
 
 
 # When everything done, release the capture
