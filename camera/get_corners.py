@@ -72,18 +72,23 @@ def get_corners(img):
     #perimeter = cv2.arcLength(big_contour,True)
     epsilon = 0.01*cv2.arcLength(big_contour,True)
     approx = cv2.approxPolyDP(big_contour,epsilon,True)
-    approx = np.reshape(approx,(4,2))
-    print(approx)
     
-    # get rotated rectangle from contour
-    rot_rect = cv2.minAreaRect(big_contour)
-    box = cv2.boxPoints(rot_rect)
-    box = np.int0(box)
-    #print(box)
-    
-    # draw rotated rectangle on copy of img
-    rot_bbox = img.copy()
-    cv2.drawContours(rot_bbox,[box],0,(0,0,255),2)
+    r,h,c = approx.shape
+    if r != 4:
+        print('ERROR! Could not find vertices to warp image. Make sure the entire map is shown in the image frame...')
+        pass
+    else:
+        approx = np.reshape(approx,(4,2)) # getting verticies of map from image
+        
+        # get rotated rectangle from contour
+        rot_rect = cv2.minAreaRect(big_contour)
+        box = cv2.boxPoints(rot_rect)
+        box = np.int0(box)
+        #print(box)
+        
+        # draw rotated rectangle on copy of img
+        rot_bbox = img.copy()
+        cv2.drawContours(rot_bbox,[box],0,(0,0,255),2)
     save = False
     
     if save:

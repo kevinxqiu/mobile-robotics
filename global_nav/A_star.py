@@ -45,13 +45,11 @@ def get_map(image,factor):
     img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
 
     h,w = img.shape
+    print(img.shape)
     new_img = cv2.resize(img,(int(pixel2mm*w/factor), int(pixel2mm*h/factor)))
     
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
     thresh[thresh == 255] = 1
-    
-    print(thresh.shape)
-
 
     thresh = np.asarray(thresh)
     

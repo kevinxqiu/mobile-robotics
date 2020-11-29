@@ -47,11 +47,30 @@ w = 640
 
 newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
 
-def detect_thymio(frame):
+def detect_thymio(frame,pixel2mmx,pixel2mmy):
+    """
+
+    Parameters
+    ----------
+    frame : np.array
+        Source image
+    pixel2mmx : int
+        Pixel scaling factor for x direction
+    pixel2mmy : int
+        Pixel scaling factor for y direction
+
+    Returns
+    -------
+    pos : int array
+        Current position shape (1,2)
+    vec : TYPE
+        Returns none
+
+    """
     # Detect aruco markers
     
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converts color image to gray space
-    corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict,parameters=paramsAruco)
+    corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict)
     corners = np.array(corners)
     
     # Plot identified markers, if any
@@ -63,20 +82,19 @@ def detect_thymio(frame):
         pos = np.empty((len(ids),2))
         vec = np.empty((len(ids),2))
         
-
-        for i in range(len(ids)):
-            c = corners[i][0] # Find center of marker
+        c = corners[0][0] # Find center of marker
             
-            pos[i,:] = [c[:,0].mean(),  c[:,1].mean()]
-            pos = pos.astype(int)
-            #print('Chair located at'+str(chair_x)+ " and " + str(chair_y))
+        pos = np.array([c[:,0].mean()*pixel2mmy,  c[:,1].mean()*pixel2mmx])
         
-            vec[i,:] = (c[1,:] + c[2,:])/2 - (c[0,:] + c[3,:])/2 # Find orientation vector of chair
-            vec[i,:] = vec[i,:] / np.linalg.norm(vec[i,:]) # Convert to unit vector
+        pos = pos.astype(int)
+        #print('Chair located at'+str(chair_x)+ " and " + str(chair_y))
+        
+        #vec = (c[1,:] + c[2,:])/2 - (c[0,:] + c[3,:])/2 # Find orientation vector of chair
+        #vec = vec/ np.linalg.norm(vec) # Convert to unit vector
 
-            arrow_endpos = (int(pos[i,0]+vec[i,0]*100),int(pos[i,1]+vec[i,1]*100))
-            
-            cv2.arrowedLine(frame,tuple(pos[i,:]),arrow_endpos,(255,0,0),(2),8,0,0.1) # Draw chair vector on img
+        #arrow_endpos = (int(pos[0]+vec[0]*100),int(pos[1]+vec[1]*100))
+        vec = []
+        #cv2.arrowedLine(frame,tuple(pos),arrow_endpos,(255,0,0),(2),8,0,0.1) # Draw chair vector on img
     else:
         pos = []
         vec = []
@@ -85,7 +103,8 @@ def detect_thymio(frame):
 
 
 # Pixel to mmm ratio -- must double check
-pixel2mm = 2.56 
+pixel2mmx = 2.5
+pixel2mmy = 2.1
 
 #=============================================================================================================================================================================================='
 #   MAIN LOOP
@@ -101,26 +120,30 @@ warped = unwarp.four_point_transform(frame, pts)
 # show and save the warped image
 #cv2.imshow("Warped", warped)
 #cv2.imwrite('warped-img.jpg',warped)
-    
+newPos = np.zeros((4,1))
 
 while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
     #frame = cv2.flip(frame,0)
-
-    # Detect Thymio location
-    pos, vec = detect_thymio(frame)
-    newPos = np.array(pos) * pixel2mm
-    newPos = newPos.astype(np.uint8)
-    print(newPos)
-    # Get warped iamge
-    warped = unwarp.four_point_transform(frame, pts)
     
+     # Get warped iamge
+    warped = unwarp.four_point_transform(frame, pts)
+    # Detect Thymio location
+    pos, vec = detect_thymio(warped,pixel2mmx,pixel2mmy)
+    
+    newPos[0] = pos[0]
+    newPos[1] = pos[1]
+    
+    print(newPos)
     #cv2.imwrite('sample-map.jpg',frame)
     #break
     
-    img = cv2.resize(warped,(2*w, 2*h))
+    warped = cv2.resize(warped,(2*w, 2*h))
     
+    kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
+    img = cv2.filter2D(warped, -1, kernel)
+
     # Print original live video feed
     cv2.imshow('Image',img)
 
