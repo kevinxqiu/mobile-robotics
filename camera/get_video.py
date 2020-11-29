@@ -9,17 +9,19 @@ import numpy as np
 import cv2
 import cv2.aruco as aruco
 from time import sleep
+import unwarp
+from get_corners import get_corners
 
 
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
 paramsAruco = aruco.DetectorParameters_create()
 paramsAruco.adaptiveThreshWinSizeMin = 3
-paramsAruco.adaptiveThreshWinSizeMax = 15
-paramsAruco.adaptiveThreshWinSizeStep = 5
+paramsAruco.adaptiveThreshWinSizeMax = 17
+paramsAruco.adaptiveThreshWinSizeStep = 9
 paramsAruco.minMarkerPerimeterRate = 0.001
-paramsAruco.maxMarkerPerimeterRate = 2
-paramsAruco.perspectiveRemovePixelPerCell = 8
+paramsAruco.maxMarkerPerimeterRate = 2.5
+paramsAruco.perspectiveRemovePixelPerCell = 9
 
 mtx = np.array([[1.42136061e+03, 0.00000000e+00, 2.31190962e+02],
  [0.00000000e+00, 1.42136061e+03, 2.69893517e+02],
@@ -49,7 +51,7 @@ def detect_thymio(frame):
     # Detect aruco markers
     
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converts color image to gray space
-    corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict)
+    corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict,parameters=paramsAruco)
     corners = np.array(corners)
     
     # Plot identified markers, if any
@@ -82,31 +84,46 @@ def detect_thymio(frame):
     return pos, vec
 
 
+# Pixel to mmm ratio -- must double check
+pixel2mm = 2.56 
 
 #=============================================================================================================================================================================================='
 #   MAIN LOOP
 #=============================================================================================================================================================================================='
 cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 
+# First we get the warped image
+ret, frame = cap.read()
+pts = get_corners(frame) # will be used to unwarp all images from live feed
+#print(pts)
+
+warped = unwarp.four_point_transform(frame, pts)
+# show and save the warped image
+#cv2.imshow("Warped", warped)
+#cv2.imwrite('warped-img.jpg',warped)
+    
+
 while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
     #frame = cv2.flip(frame,0)
-    #frame = cv2.flip(frame,1)
+
     # Detect Thymio location
     pos, vec = detect_thymio(frame)
+    newPos = np.array(pos) * pixel2mm
+    newPos = newPos.astype(np.uint8)
+    print(newPos)
+    # Get warped iamge
+    warped = unwarp.four_point_transform(frame, pts)
     
-    print(pos)
-    # Undistort
-    #dst = cv2.undistort(frame, mtx, dist, None, newcameramtx)
+    #cv2.imwrite('sample-map.jpg',frame)
+    #break
+    
+    img = cv2.resize(warped,(2*w, 2*h))
+    
+    # Print original live video feed
+    cv2.imshow('Image',img)
 
-    # crop the image
-    #x,y,w,h = roi
-    #dst = dst[y:y+h, x:x+w]
-    #cv2.imshow('calibresult',dst)
-    
-    # Display the resulting frame    
-    cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
    
