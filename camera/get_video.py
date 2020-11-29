@@ -15,54 +15,46 @@ from get_corners import get_corners
 
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
-paramsAruco = aruco.DetectorParameters_create()
-paramsAruco.adaptiveThreshWinSizeMin = 3
-paramsAruco.adaptiveThreshWinSizeMax = 17
-paramsAruco.adaptiveThreshWinSizeStep = 9
-paramsAruco.minMarkerPerimeterRate = 0.001
-paramsAruco.maxMarkerPerimeterRate = 2.5
-paramsAruco.perspectiveRemovePixelPerCell = 9
+# Camera calibration stuff NOT USED
+# mtx = np.array([[1.42136061e+03, 0.00000000e+00, 2.31190962e+02],
+#  [0.00000000e+00, 1.42136061e+03, 2.69893517e+02],
+#  [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
 
-mtx = np.array([[1.42136061e+03, 0.00000000e+00, 2.31190962e+02],
- [0.00000000e+00, 1.42136061e+03, 2.69893517e+02],
- [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+# dist = np.array([[ 3.77240855e-01],
+#  [ 4.30142117e+00],
+#  [ 3.51204744e-02],
+#  [-7.20942014e-02],
+#  [-6.00795847e+01],
+#  [-2.47754984e-01],
+#  [ 4.30058684e-02],
+#  [-1.39645742e+01],
+#  [ 0.00000000e+00],
+#  [ 0.00000000e+00],
+#  [ 0.00000000e+00],
+#  [ 0.00000000e+00],
+#  [ 0.00000000e+00],
+#  [ 0.00000000e+00]])
 
-dist = np.array([[ 3.77240855e-01],
- [ 4.30142117e+00],
- [ 3.51204744e-02],
- [-7.20942014e-02],
- [-6.00795847e+01],
- [-2.47754984e-01],
- [ 4.30058684e-02],
- [-1.39645742e+01],
- [ 0.00000000e+00],
- [ 0.00000000e+00],
- [ 0.00000000e+00],
- [ 0.00000000e+00],
- [ 0.00000000e+00],
- [ 0.00000000e+00]])
+#newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
 
 h = 480
 w = 640
 
-newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
-
 def detect_thymio(frame,pixel2mmx,pixel2mmy):
     """
-
     Parameters
     ----------
-    frame : np.array
+    frame : IMAGE
         Source image
-    pixel2mmx : int
+    pixel2mmx : INT
         Pixel scaling factor for x direction
-    pixel2mmy : int
+    pixel2mmy : INT
         Pixel scaling factor for y direction
 
     Returns
     -------
-    pos : int array
-        Current position shape (1,2)
+    pos : INT 
+        Current (x,y) position with shape (1,2)
     vec : TYPE
         Returns none
 
@@ -132,8 +124,10 @@ while(True):
     # Detect Thymio location
     pos, vec = detect_thymio(warped,pixel2mmx,pixel2mmy)
     
-    newPos[0] = pos[0]
-    newPos[1] = pos[1]
+    
+    if pos != []:
+        newPos[0] = pos[0]
+        newPos[1] = pos[1]
     
     print(newPos)
     #cv2.imwrite('sample-map.jpg',frame)
