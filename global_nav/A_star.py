@@ -40,13 +40,20 @@ def create_empty_plot(max_val):
     return fig, ax
 
 def get_map(image,factor):
+    pixel2mm = 2.56
+    
     img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
 
-    new_img = cv2.resize(img,(int(img.shape[1]/factor),int(img.shape[0]/factor)))
+    h,w = img.shape
+    print(img.shape)
+    new_img = cv2.resize(img,(int(pixel2mm*w/factor), int(pixel2mm*h/factor)))
+    
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
     thresh[thresh == 255] = 1
-    thresh = np.asarray(thresh)
 
+    thresh = np.asarray(thresh)
+    
+    print(thresh.shape)
     #plt.imshow(thresh)
     return thresh
 
@@ -201,11 +208,11 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
 #  MAIN
 # --------------------------------------------------------------------------------------------
 # Define the start and end goal
-start = (0,0)
-goal = (55,70)
+start = (3,0)
+goal = (2,0)
 
-resize_factor = 6 # Resize occupancy grid
-occupancy_grid = get_map('map.jpg',resize_factor)
+resize_factor = 7.5 # Resize occupancy grid
+occupancy_grid = get_map('warped-img.jpg',resize_factor)
 max_x, max_y = occupancy_grid.shape # Size of the map
 max_val = [max_x,max_y]
 
