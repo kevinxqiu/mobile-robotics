@@ -1,3 +1,9 @@
+import os
+import sys
+import time
+import serial
+import math
+import numpy as np
 from threading import Timer
 
 class Robot():
@@ -5,10 +11,28 @@ class Robot():
         self.curr_pos = [0,0,0]
         self.speed = 100
         self.th = th
+        #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         self.rt = RepeatedTimer(Ts, self.test_saw_wall) # it auto-starts, no need of rt.start()
 
     def get_position(self):
         return self.curr_pos
+
+    def set_position(self, pos):
+        self.curr_pos = pos
+
+    def get_speed(self):
+        self.measured_speed = np.array([self.th["motor.left.speed"], self.th["motor.right.speed"]])
+
+        if self.measured_speed[0] > 9999:
+            self.measured_speed[0] = self.measured_speed[0] - 2**16
+        if self.measured_speed[1] > 9999:
+            self.measured_speed[1] = self.measured_speed[1] - 2**16
+
+        #print(self.measured_speed)
+        return self.measured_speed
+
+    def set_speed(self, speed):
+        self.speed = speed
 
     def move_to_target(self, target_pos):
         if target_pos == self.curr_pos[0:2]: return False #if the robot is already at the position or doesn't move
@@ -26,57 +50,70 @@ class Robot():
 
         #give commands
         self.turn(turn_angle)
-        self.forward(distance)
+        self.go_straight(distance)
 
         #update position and angle of the robot
         self.curr_pos = [target_pos[0],target_pos[1],path_angle]
 
-
     def turn(self, turn_angle):
         print("turn_angle:{}".format(turn_angle),"\n")
 
+        target_time = abs(turn_angle)/38.558 #linear fit model from degrees to s for v=100 (change to Kalman)
+
+        print("target_turn:{} s".format(target_time))
+
+        t_0 = time.time()
+
         if turn_angle > 0: #turn_angle to the left
-            target_time = abs(turn_angle)/38.558 #linear fit model from rad to s for v=100 (change to Kalman)
-            left_speed = -self.speed
-            right_speed = self.speed
-
+            self.move(l_speed=-self.speed, r_speed=self.speed)
         elif turn_angle < 0: #turn_angle to the right
-            target_time = abs(turn_angle)/38.558
-            left_speed = self.speed
-            right_speed = -self.speed
-
+            self.move(l_speed=self.speed, r_speed=-self.speed)
         else: #if turn_angle = 0, do not waste time
             return False
 
-        print("target_time_turn:{}".format(target_time))
-        t_0 = time.time()
-
-        self.move(l_speed=left_speed, r_speed=right_speed)
-
         time.sleep(target_time)
         t_end = time.time()
-        print("actual_time_turn:{}".format(t_end-t_0))
+
+        print("actual_turn:{} s".format(t_end-t_0))
 
         #time.sleep(0.1)
 
-    def forward(self, distance):
+    def go_straight(self, distance):
         print("distance:{}".format(distance))
 
-        target_time = distance/31.573 #linear fit model from mm to s for v=100 (change to Kalman)
+        target_time = abs(distance)/31.573 #linear fit model from mm to s for v=100 (change to Kalman)
 
-        print("target_time_forward:{}".format(target_time))
+        print("target_go_straight:{} s".format(target_time))
+
         t_0 = time.time()
 
-        self.move(l_speed=self.speed, r_speed=self.speed)
+        if distance > 0: #go forward
+            self.move(l_speed=self.speed, r_speed=self.speed)
+        elif distance < 0: #go backwards
+            self.move(l_speed=-self.speed, r_speed=-self.speed)
 
         time.sleep(target_time)
         t_end = time.time()
-        print("actual_time_forward:{}".format(t_end-t_0), "\n")
+
+        print("actual_go_straight:{} s".format(t_end-t_0), "\n")
 
         #time.sleep(0.1)
 
+    def move(self, l_speed=100, r_speed=100, verbose=False):
+        # Printing the speeds if requested
+        if verbose: print("\t\t Setting speed : ", l_speed, r_speed)
+        # Changing negative values to the expected ones with the bitwise complement
+        if l_speed < 0:
+            l_speed = l_speed + 2**16
+        if r_speed < 0:
+            r_speed = r_speed + 2**16
+
+        # Setting the motor speeds
+        self.th.set_var("motor.left.target", l_speed)
+        self.th.set_var("motor.right.target", r_speed)
+
     def stop(self):
-        move(l_speed=0, r_speed=0)
+        self.move(l_speed=0, r_speed=0)
 
         #time.sleep(0.1)
 
@@ -127,24 +164,7 @@ class Robot():
             if test_found_path(verbose):
                 found_path = True
 
-    def move(self, l_speed=100, r_speed=100, verbose=False):
-    """
-    Sets the motor speeds of the Thymio
-    param l_speed: left motor speed
-    param r_speed: right motor speed
-    param verbose: whether to print status messages or not
-    param th: thymio serial connection handle
-    """
-        # Printing the speeds if requested
-        if verbose: print("\t\t Setting speed : ", l_speed, r_speed)
 
-        # Changing negative values to the expected ones with the bitwise complement
-        l_speed = l_speed if l_speed>=0 else 2**16+l_speed
-        r_speed = r_speed if r_speed>=0 else 2**16+r_speed
-
-        # Setting the motor speeds
-        self.th.set_var("motor.left.target", l_speed)
-        self.th.set_var("motor.right.target", r_speed)
 
     def test_found_path(self, verbose=False):
     """
