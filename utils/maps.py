@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
-
+import sys
+import os
 sys.path.insert(0, os.path.join(os.getcwd(), 'global_nav'))
 
 import A_star
