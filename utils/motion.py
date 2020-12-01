@@ -6,13 +6,39 @@ import math
 import numpy as np
 from threading import Timer
 
+class RepeatedTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer     = None
+        self.interval   = interval
+        self.function   = function
+        self.args       = args
+        self.kwargs     = kwargs
+        self.is_running = False
+        self.start()
+
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
+
+
 class Robot():
     def __init__(self, th):
         self.curr_pos = [0,0,0]
         self.speed = 100
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
-        self.rt = RepeatedTimer(Ts, self.test_saw_wall) # it auto-starts, no need of rt.start()
+        self.rt = RepeatedTimer(0.1, self.test_saw_wall) # it auto-starts, no need of rt.start()
 
     def get_position(self):
         return self.curr_pos
@@ -121,23 +147,23 @@ class Robot():
 
             if any([x>wall_threshold for x in serial['prox.horizontal'][:-2]]):
                 if verbose: print("\t\t Saw a wall")
-                    if thread:
-                        self.rt.stop() #we stop the thread to not execute test_saw_wall another time
-                        # Start following wall of obstacle
-                        wall_following(verbose=verbose)
-                        self.rt.start(self)
-                    else: #we also use test_saw_wall to check if there is STILL a wall (in the wall_folowing function), so we put thread false
-                        return True
+                if thread:
+                    self.rt.stop() #we stop the thread to not execute test_saw_wall another time
+                    # Start following wall of obstacle
+                    wall_following(verbose=verbose)
+                    self.rt.start(self)
+                else: #we also use test_saw_wall to check if there is STILL a wall (in the wall_folowing function), so we put thread false
+                    return True
             return False #to test, not sure we can return smg with the timer, if not, just change the function to return only when thread is false
 
     def wall_following(self, motor_speed=100, wall_threshold=500, verbose=False):
-    """
-    Wall following behaviour of the FSM
-    param motor_speed: the Thymio's motor speed
-    param wall_threshold: threshold starting which it is considered that the sensor saw a wall
-    param white_threshold: threshold starting which it is considered that the ground sensor saw white
-    param verbose: whether to print status messages or not
-    """
+        """
+        Wall following behaviour of the FSM
+        param motor_speed: the Thymio's motor speed
+        param wall_threshold: threshold starting which it is considered that the sensor saw a wall
+        param white_threshold: threshold starting which it is considered that the ground sensor saw white
+        param verbose: whether to print status messages or not
+        """
 
         if verbose: print("Starting wall following behaviour")
         found_path = False
@@ -149,7 +175,7 @@ class Robot():
 
         while not found_path:
 
-            if test_saw_wall(thread= False, wall_threshold, verbose=False):
+            if self.test_saw_wall(thread=False, wall_threshold=wall_threshold, verbose=False):
                 if prev_state=="forward":
                     if verbose: print("\tSaw wall, turning clockwise")
                     self.move(l_speed=motor_speed, r_speed=-motor_speed)
@@ -161,48 +187,24 @@ class Robot():
                     self.move(l_speed=motor_speed, r_speed=motor_speed)
                     prev_state="forward"
 
-            if test_found_path(verbose):
+            if self.test_found_path(verbose):
                 found_path = True
 
 
 
     def test_found_path(self, verbose=False):
-    """
-    Test if the robot has returned to its original planned path
-    Parameters
-    ----------
-    verbose : TYPE, optional
-        DESCRIPTION. The default is False.
+        """
+        Test if the robot has returned to its original planned path
+        Parameters
+        ----------
+        verbose : TYPE, optional
+            DESCRIPTION. The default is False.
 
-    Returns
-    -------
-    None.
+        Returns
+        -------
+        None.
 
-    """
+        """
 
-    return False
+        return False
 
-class RepeatedTimer(object):
-    def __init__(self, interval, function, *args, **kwargs):
-        self._timer     = None
-        self.interval   = interval
-        self.function   = function
-        self.args       = args
-        self.kwargs     = kwargs
-        self.is_running = False
-        self.start()
-
-    def _run(self):
-        self.is_running = False
-        self.start()
-        self.function(*self.args, **self.kwargs)
-
-    def start(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.start()
-            self.is_running = True
-
-    def stop(self):
-        self._timer.cancel()
-        self.is_running = False
