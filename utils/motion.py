@@ -38,7 +38,7 @@ class Robot():
         self.speed = 100
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
-        self.rt = RepeatedTimer(0.1, self.test_saw_wall) # it auto-starts, no need of rt.start()
+        #self.rt = RepeatedTimer(0.1, self.test_saw_wall) # it auto-starts, no need of rt.start()
 
     def get_position(self):
         return self.curr_pos
@@ -72,7 +72,7 @@ class Robot():
         #turn angle to get to target relative to Thymio frame
         turn_angle = path_angle - self.curr_pos[2]
         if abs(turn_angle) > 180:
-             turn_angle = (turn_angle + 360) % 360;
+             turn_angle = (turn_angle + 360) % 360
 
         #give commands
         self.turn(turn_angle)
@@ -190,8 +190,6 @@ class Robot():
             if self.test_found_path(verbose):
                 found_path = True
 
-
-
     def test_found_path(self, verbose=False):
         """
         Test if the robot has returned to its original planned path
@@ -207,4 +205,3 @@ class Robot():
         """
 
         return False
-
