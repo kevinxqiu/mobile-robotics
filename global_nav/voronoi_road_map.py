@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from dijkstra_search import DijkstraSearch
 from scipy.spatial import cKDTree, Voronoi
+import cv2
 
 show_animation = True
 
@@ -126,40 +127,92 @@ class VoronoiRoadMapPlanner:
         sample_y.append(gy)
 
         return sample_x, sample_y
+    
 
 
-def main():
+
+def get_path():
     print(__file__ + " start!!")
-
+    
     # start and goal position
-    sx = 10.0  # [m]
-    sy = 10.0  # [m]
-    gx = 50.0  # [m]
-    gy = 50.0  # [m]
-    robot_size = 5.0  # [m]
+    sx = 5.0  # [mm]
+    sy = 5.0  # [mm]
+    gx = 50.0  # [mm]
+    gy = 20.0  # [mm]
+    robot_size = 2.0  # [mm]
+    
+    img = 'warped-img.jpg'
+    
+    pixel2mmx = 2.56
+    pixel2mmy = 2.14
+    factor = 20
+    
+    gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+    row, col = gray.shape[:2]
+    #bottom = gray[row-2:row, 0:col]
+    #mean = cv2.mean(bottom)[0]
+    print(gray.shape)
+    bordersize = 5
+    
+    border = cv2.copyMakeBorder(
+        gray,
+        top=bordersize,
+        bottom=bordersize,
+        left=bordersize,
+        right=bordersize,
+        borderType=cv2.BORDER_CONSTANT,
+        value=[0, 0, 0]
+    )
+    
+    print(border.shape)
+    
+    h,w = gray.shape
+    #plt.imshow(gray)
+    
+    new_img = cv2.resize(border,(int(pixel2mmy*w/factor), int(pixel2mmx*h/factor))) 
+    
+    ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
 
-    ox = []
-    oy = []
+    #thresh = np.asarray(thresh)
+    thresh = np.rot90(thresh,k=1, axes=(1,0))
+    #thresh = cv2.flip(thresh,0)
+    print(thresh.shape)
+    
+    coords = np.column_stack(np.where(thresh == 255))
+    coords = np.transpose(coords)
+    
+    ox = coords[0,:]
+    print(ox.shape)
+    ox = ox.tolist()
+    
+    oy = coords[1,:]
+    oy = oy.tolist()
+    
+    
+    # ox = []
+    # oy = []
 
-    for i in range(60):
-        ox.append(i)
-        oy.append(0.0)
-    for i in range(60):
-        ox.append(60.0)
-        oy.append(i)
-    for i in range(61):
-        ox.append(i)
-        oy.append(60.0)
-    for i in range(61):
-        ox.append(0.0)
-        oy.append(i)
-    for i in range(40):
-        ox.append(20.0)
-        oy.append(i)
-    for i in range(40):
-        ox.append(40.0)
-        oy.append(60.0 - i)
-
+    # for i in range(60):
+    #     ox.append(i)
+    #     oy.append(0.0)
+    # for i in range(60):
+    #     ox.append(60.0)
+    #     oy.append(i)
+    # for i in range(61):
+    #     ox.append(i)
+    #     oy.append(60.0)
+    # for i in range(61):
+    #     ox.append(0.0)
+    #     oy.append(i)
+    # for i in range(40):
+    #     ox.append(20.0)
+    #     oy.append(i)
+    # for i in range(40):
+    #     ox.append(40.0)
+    #     oy.append(60.0 - i)
+    
+    #print(ox)
+    
     if show_animation:  # pragma: no cover
         plt.plot(ox, oy, ".k")
         plt.plot(sx, sy, "^r")
@@ -169,7 +222,7 @@ def main():
 
     rx, ry = VoronoiRoadMapPlanner().planning(sx, sy, gx, gy, ox, oy,
                                               robot_size)
-
+    print(rx)
     assert rx, 'Cannot found path'
 
     if show_animation:  # pragma: no cover
@@ -177,6 +230,8 @@ def main():
         plt.pause(0.1)
         plt.show()
 
+    return rx, ry
+
 
 if __name__ == '__main__':
-    main()
+    rx, ry  = get_path()
