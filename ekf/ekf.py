@@ -16,8 +16,8 @@ Q = np.diag([
     0.0001,  # variance of location on x-axis
     0.0001,  # variance of location on y-axis
     np.deg2rad(0.0001),  # variance of yaw angle
-    0.0001,  # variance of velocity
-    0.0001 # variance of angular velocity (yaw rate)
+    3.45831 ** 2,  # variance of velocity mm^2/s^2
+    0.0402859 ** 2 # variance of angular velocity rad^2/s^2(yaw rate)
     ]) ** 2  # predict state covariance
 R = np.diag([
     0.0001,
@@ -69,7 +69,7 @@ def motion_model(x, u):
                   [0.0, 1.0]
                   ])
 
-    x = F @ x + B @ u
+    x = F @ x + B @ u + Q @ np.random.randn(5,1)
 
     return x
 
@@ -83,7 +83,7 @@ def observation_model(x):
         #[0, 0, 0, 0, 1]
         ])
 
-    z = H @ x
+    z = H @ x + R @ np.random.randn(3, 1)
     return z
 
 
@@ -127,30 +127,30 @@ def jacob_h():
     return jH
 
 
-def observation(xTrue, xDR, u):
-    xTrue = motion_model(xTrue, u) + Q @ np.random.randn(5,1)
+def observation(xTrue, u):
+    xTrue = motion_model(xTrue, u)
 
     # add noise to gps x-y
     #measure camera
-    z = observation_model(xTrue)
+    z = observation_model(x)
 
     # add noise to input
-    ud = u #+ INPUT_NOISE @ np.random.randn(2, 1)
+    #ud = u #+ INPUT_NOISE @ np.random.randn(2, 1)
 
-    xDR = motion_model(xDR, ud)
+    #xDR = motion_model(xDR, ud)
 
-    return xTrue, z, xDR, ud
+    return z, xTrue#, xDR, ud
 
 
 def ekf_estimation(xEst, PEst, z, u):
     #  Predict
-    xPred = motion_model(xEst, u) + Q @ np.random.randn(5,1)
+    xPred = motion_model(xEst, u)
     jF = jacob_f(xEst, u)
     PPred = jF @ PEst @ jF.T + Q
 
     #  Update
     jH = jacob_h()
-    zPred = observation_model(xPred) + R @ np.random.randn(3, 1)
+    zPred = observation_model(xPred)
     y = z - zPred
     S = jH @ PPred @ jH.T + R
     K = PPred @ jH.T @ np.linalg.inv(S)
