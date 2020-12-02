@@ -15,61 +15,60 @@ from scipy.spatial.transform import Rotation as Rot
 Q = np.diag([
     0.0001,  # variance of location on x-axis
     0.0001,  # variance of location on y-axis
-    np.deg2rad(0.0),  # variance of yaw angle
-    0.0001  # variance of velocity
-]) ** 2  # predict state covariance
-R = np.diag([0.0001, 0.0001]) ** 2  # Observation x,y position covariance
+    np.deg2rad(0.0001),  # variance of yaw angle
+    0.0001,  # variance of velocity
+    0.0001 # variance of angular velocity (yaw rate)
+    ]) ** 2  # predict state covariance
+R = np.diag([
+    0.0001,
+    0.0001,
+    np.deg2rad(0.0001),
+    #0.0001,
+    #0.0001
+    ]) ** 2  # Observation x,y, theta position and v,w covariance
 
 #  Simulation parameter
-INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0)]) ** 2
-GPS_NOISE = np.diag([0.0, 0.0]) ** 2
+INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
+GPS_NOISE = np.diag([0.0001, 0.0001, 0.0001]) ** 2
 
-DT = 1  # time tick [s]
+DT = 0.1 # time tick [s]
 SIM_TIME = 15  # simulation time [s]
 
 show_animation = True
 
-
 def calc_input(leftv, rightv):
     L = 95 #wheelbase length in mm
-    #leftv = 100 * 0.31573
-    #rightv = 100 * 0.31573
-    #print(leftv)
-    #print(rightv)
-    delta = np.abs(leftv - rightv)
-    v = (leftv + rightv) / 2 # [m/s]
-    yawrate = (leftv - rightv) / L
-    #if np.abs(yawrate) > 30:
-    #    v = 0
+    #conversion from Thymio speed to mm/s
+    #leftv = leftv_thymio * 0.31573
+    #rightv = rightv_thymio * 0.31573
+    if bool(leftv < 0) ^ bool(rightv < 0):
+        yawrate = (rightv - leftv) / L  #[rad/s]
+        v = 0
+    else:
+        v = (rightv + leftv) / 2 #[mm/s]
+        yawrate = 0
+
     u = np.array([[v], [yawrate]])
-    print(u)
+    #print(u)
     return u
 
-
-def observation(xTrue, xd, u):
-    xTrue = motion_model(xTrue, u)
- 
-    # add noise to gps x-y
-    z = observation_model(xTrue) + GPS_NOISE @ np.random.randn(2, 1)
-
-    # add noise to input
-    ud = u + INPUT_NOISE @ np.random.randn(2, 1)
-
-    xd = motion_model(xd, ud)
-
-    return xTrue, z, xd, ud
-
-
 def motion_model(x, u):
-    F = np.array([[1.0, 0, 0, 0],
-                  [0, 1.0, 0, 0],
-                  [0, 0, 1.0, 0],
-                  [0, 0, 0, 0]])
+    yaw = x[2, 0]
+    #print(yaw)
 
-    B = np.array([[DT * math.cos(x[2, 0]), 0],
-                  [DT * math.sin(x[2, 0]), 0],
+    F = np.array([[1.0, 0, 0, 0, 0],
+                  [0, 1.0, 0, 0, 0],
+                  [0, 0, 1.0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]
+                  ])
+
+    B = np.array([[DT * math.cos(yaw), 0],
+                  [DT * math.sin(yaw), 0],
                   [0.0, DT],
-                  [1.0, 0.0]])
+                  [1.0, 0.0],
+                  [0.0, 1.0]
+                  ])
 
     x = F @ x + B @ u
 
@@ -78,9 +77,12 @@ def motion_model(x, u):
 
 def observation_model(x):
     H = np.array([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0]
-    ])
+        [1, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0],
+        #[0, 0, 0, 1, 0],
+        #[0, 0, 0, 0, 1]
+        ])
 
     z = H @ x
 
@@ -102,24 +104,44 @@ def jacob_f(x, u):
     dy/dv = dt*sin(yaw)
     """
     yaw = x[2, 0]
+    #print(yaw)
     v = u[0, 0]
     jF = np.array([
-        [1.0, 0.0, -DT * v * math.sin(yaw), DT * math.cos(yaw)],
-        [0.0, 1.0, DT * v * math.cos(yaw), DT * math.sin(yaw)],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0]])
+        [1.0, 0.0, -DT * v * math.sin(yaw), DT * math.cos(yaw), 0.0],
+        [0.0, 1.0, DT * v * math.cos(yaw), DT * math.sin(yaw), 0.0],
+        [0.0, 0.0, 1.0, 0.0, DT],
+        [0.0, 0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 1.0]
+        ])
 
     return jF
-
 
 def jacob_h():
     # Jacobian of Observation Model
     jH = np.array([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0]
-    ])
+        [1, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0],
+        #[0, 0, 0, 1, 0],
+        #[0, 0, 0, 0, 1]
+        ])
 
     return jH
+
+
+def observation(xTrue, xDR, u):
+    xTrue = motion_model(xTrue, u)
+
+    # add noise to gps x-y
+    #measure camera
+    z = observation_model(xTrue) + GPS_NOISE @ np.random.randn(3, 1)
+
+    # add noise to input
+    ud = u + INPUT_NOISE @ np.random.randn(2, 1)
+
+    xDR = motion_model(xDR, ud)
+
+    return xTrue, z, xDR, ud
 
 
 def ekf_estimation(xEst, PEst, z, u):
@@ -212,7 +234,7 @@ def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
             plt.grid(True)
             plt.xlim(0, 0.2)
             plt.ylim(-0.05,0.05)
-            
+
             plt.xlabel('x')
             plt.ylabel('y')
             plt.pause(0.001)"""

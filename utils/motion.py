@@ -35,7 +35,11 @@ class RepeatedTimer(object):
 class Robot():
     def __init__(self, th):
         self.curr_pos = [0,0,0]
-        self.speed = 100
+        self.wheel_length = 95 #mm
+        self.speed = 100 #Thymio speed
+        self.speed_to_mm_s = 0.31573 #multiply with Thymio speed to get mm/s
+        #self.speed_to_deg_s = 0.38558 #multiply with Thymio speed to get deg/s
+        self.speed_to_deg_s = math.degrees(2*self.speed_to_mm_s/95)
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         #self.rt = RepeatedTimer(0.1, self.test_saw_wall) # it auto-starts, no need of rt.start()
@@ -46,13 +50,16 @@ class Robot():
     def set_position(self, pos):
         self.curr_pos = pos
 
-    def get_speed(self):
+    def get_speed(self): #Measures Thymio speed at each wheel
         self.measured_speed = np.array([self.th["motor.left.speed"], self.th["motor.right.speed"]])
 
         if self.measured_speed[0] > 9999:
             self.measured_speed[0] = self.measured_speed[0] - 2**16
         if self.measured_speed[1] > 9999:
             self.measured_speed[1] = self.measured_speed[1] - 2**16
+
+        #convert to mm/s
+        self.measured_speed = self.speed_to_mm_s * self.measured_speed
 
         #print(self.measured_speed)
         return self.measured_speed
@@ -61,15 +68,16 @@ class Robot():
         self.speed = speed
 
     def move_to_target(self, target_pos):
-        if target_pos == self.curr_pos[0:2]: return False #if the robot is already at the position or doesn't move
+        if target_pos == self.curr_pos[0:2]: #if the robot is already at the position or doesn't move
+            return False
 
         #distance from current position to target
-        distance = math.sqrt(((target_pos[0]-self.curr_pos[0])**2)+((target_pos[1]-self.curr_pos[1])**2))
+        distance = math.sqrt(((target_pos[0] - self.curr_pos[0]) **2) + ((target_pos[1] - self.curr_pos[1]) **2))
 
         #absolute angle from current position to target (this angle will always be returned between ]-180;180])
-        path_angle = math.degrees(math.atan2(target_pos[1]-self.curr_pos[1],target_pos[0]-self.curr_pos[0]))
+        path_angle = math.degrees(math.atan2(target_pos[1] - self.curr_pos[1], target_pos[0] - self.curr_pos[0]))
 
-        #turn angle to get to target relative to Thymio frame
+        #turn angle to get to target (relative to Thymio frame)
         turn_angle = path_angle - self.curr_pos[2]
         if abs(turn_angle) > 180:
              turn_angle = (turn_angle + 360) % 360
@@ -79,14 +87,35 @@ class Robot():
         self.go_straight(distance)
 
         #update position and angle of the robot
-        self.curr_pos = [target_pos[0],target_pos[1],path_angle]
+        #self.curr_pos = [target_pos[0],target_pos[1],path_angle]
+
+    def go_straight(self, distance):
+        print("distance:{}".format(distance))
+
+        target_time = abs(distance) / (self.speed * self.speed_to_mm_s)  #linear fit model from mm to s for v=100 (change to Kalman)
+
+        #print("target_go_straight:{} s".format(target_time))
+
+        t_0 = time.time()
+
+        if distance > 0: #go forward
+            self.move(l_speed=self.speed, r_speed=self.speed)
+        elif distance < 0: #go backwards
+            self.move(l_speed=-self.speed, r_speed=-self.speed)
+
+        time.sleep(target_time)
+        t_end = time.time()
+
+        print("go_straight_took:{} s".format(t_end-t_0), "\n")
+
+        #time.sleep(0.1)
 
     def turn(self, turn_angle):
-        print("turn_angle:{}".format(turn_angle),"\n")
+        print("turn_angle:{}".format(turn_angle))
 
-        target_time = abs(turn_angle)/38.558 #linear fit model from degrees to s for v=100 (change to Kalman)
+        target_time = abs(turn_angle)/ (self.speed * self.speed_to_deg_s) #linear fit model from degrees to s for v=100 (change to Kalman)
 
-        print("target_turn:{} s".format(target_time))
+        #print("target_turn:{} s".format(target_time))
 
         t_0 = time.time()
 
@@ -100,28 +129,7 @@ class Robot():
         time.sleep(target_time)
         t_end = time.time()
 
-        print("actual_turn:{} s".format(t_end-t_0))
-
-        #time.sleep(0.1)
-
-    def go_straight(self, distance):
-        print("distance:{}".format(distance))
-
-        target_time = abs(distance)/31.573 #linear fit model from mm to s for v=100 (change to Kalman)
-
-        print("target_go_straight:{} s".format(target_time))
-
-        t_0 = time.time()
-
-        if distance > 0: #go forward
-            self.move(l_speed=self.speed, r_speed=self.speed)
-        elif distance < 0: #go backwards
-            self.move(l_speed=-self.speed, r_speed=-self.speed)
-
-        time.sleep(target_time)
-        t_end = time.time()
-
-        print("actual_go_straight:{} s".format(t_end-t_0), "\n")
+        print("actual_turn_took:{} s".format(t_end-t_0), "\n")
 
         #time.sleep(0.1)
 
