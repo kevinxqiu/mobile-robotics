@@ -42,7 +42,7 @@ class Robot():
         self.speed_to_deg_s = math.degrees(2*self.speed_to_mm_s/self.wheeltowheel_length)
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
-        self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
+        #self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
 
     def get_position(self):
         return self.curr_pos

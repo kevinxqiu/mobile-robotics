@@ -5,8 +5,13 @@ Created on Wed Nov 25 22:35:07 2020
 @author: kevin
 """
 
-import math
+sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
 
+import math
+import cv2
+import cv2.aruco as aruco
+from time import sleep
+import get_video
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
@@ -132,7 +137,8 @@ def observation(xTrue, u):
 
     # add noise to gps x-y
     #measure camera
-    z = observation_model(x)
+    camera_pos = get_video.get_video(cap, pts):
+    z = observation_model(camera_pos)
 
     # add noise to input
     #ud = u #+ INPUT_NOISE @ np.random.randn(2, 1)
