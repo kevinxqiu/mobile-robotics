@@ -35,11 +35,11 @@ class RepeatedTimer(object):
 class Robot():
     def __init__(self, th):
         self.curr_pos = [0,0,0]
-        self.wheel_length = 95 #mm
+        self.wheeltowheel_length = 95 #mm
         self.speed = 100 #Thymio speed
         self.speed_to_mm_s = 0.31573 #multiply with Thymio speed to get mm/s
         #self.speed_to_deg_s = 0.38558 #multiply with Thymio speed to get deg/s
-        self.speed_to_deg_s = math.degrees(2*self.speed_to_mm_s/95)
+        self.speed_to_deg_s = math.degrees(2*self.speed_to_mm_s/self.wheeltowheel_length)
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()

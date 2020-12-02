@@ -28,8 +28,8 @@ R = np.diag([
     ]) ** 2  # Observation x,y, theta position and v,w covariance
 
 #  Simulation parameter
-INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
-GPS_NOISE = np.diag([0.0001, 0.0001, 0.0001]) ** 2
+#INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
+#GPS_NOISE = np.diag([0.0001, 0.0001, 0.0001]) ** 2
 
 DT = 0.1 # time tick [s]
 SIM_TIME = 15  # simulation time [s]
@@ -54,7 +54,6 @@ def calc_input(leftv, rightv):
 
 def motion_model(x, u):
     yaw = x[2, 0]
-    #print(yaw)
 
     F = np.array([[1.0, 0, 0, 0, 0],
                   [0, 1.0, 0, 0, 0],
@@ -85,7 +84,6 @@ def observation_model(x):
         ])
 
     z = H @ x
-
     return z
 
 
@@ -104,8 +102,8 @@ def jacob_f(x, u):
     dy/dv = dt*sin(yaw)
     """
     yaw = x[2, 0]
-    #print(yaw)
     v = u[0, 0]
+
     jF = np.array([
         [1.0, 0.0, -DT * v * math.sin(yaw), DT * math.cos(yaw), 0.0],
         [0.0, 1.0, DT * v * math.cos(yaw), DT * math.sin(yaw), 0.0],
@@ -130,14 +128,14 @@ def jacob_h():
 
 
 def observation(xTrue, xDR, u):
-    xTrue = motion_model(xTrue, u)
+    xTrue = motion_model(xTrue, u) + Q @ np.random.randn(5,1)
 
     # add noise to gps x-y
     #measure camera
-    z = observation_model(xTrue) + GPS_NOISE @ np.random.randn(3, 1)
+    z = observation_model(xTrue)
 
     # add noise to input
-    ud = u + INPUT_NOISE @ np.random.randn(2, 1)
+    ud = u #+ INPUT_NOISE @ np.random.randn(2, 1)
 
     xDR = motion_model(xDR, ud)
 
@@ -146,13 +144,13 @@ def observation(xTrue, xDR, u):
 
 def ekf_estimation(xEst, PEst, z, u):
     #  Predict
-    xPred = motion_model(xEst, u)
+    xPred = motion_model(xEst, u) + Q @ np.random.randn(5,1)
     jF = jacob_f(xEst, u)
     PPred = jF @ PEst @ jF.T + Q
 
     #  Update
     jH = jacob_h()
-    zPred = observation_model(xPred)
+    zPred = observation_model(xPred) + R @ np.random.randn(3, 1)
     y = z - zPred
     S = jH @ PPred @ jH.T + R
     K = PPred @ jH.T @ np.linalg.inv(S)
