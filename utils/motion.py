@@ -38,7 +38,7 @@ class Robot():
         self.speed = 100
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
-        #self.rt = RepeatedTimer(0.1, self.test_saw_wall) # it auto-starts, no need of rt.start()
+        self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
 
     def get_position(self):
         return self.curr_pos
@@ -143,20 +143,19 @@ class Robot():
 
         #time.sleep(0.1)
 
-    def test_saw_wall(self, thread=True, wall_threshold=500, verbose=False):
+    def test_saw_wall(self, thread=True, wall_threshold=500, verbose=True):
+        if any([x>wall_threshold for x in self.th['prox.horizontal'][:-2]]):
+            if verbose: print("\t\t Saw a wall")
+            if thread:
+                self.rt.stop() #we stop the thread to not execute test_saw_wall another time
+                # Start following wall of obstacle
+                self.wall_following(verbose=verbose)
+                self.rt.start()
+            else: #we also use test_saw_wall to check if there is STILL a wall (in the wall_folowing function), so we put thread false
+                return True
+        return False #to test, not sure we can return smg with the timer, if not, just change the function to return only when thread is false
 
-            if any([x>wall_threshold for x in serial['prox.horizontal'][:-2]]):
-                if verbose: print("\t\t Saw a wall")
-                if thread:
-                    self.rt.stop() #we stop the thread to not execute test_saw_wall another time
-                    # Start following wall of obstacle
-                    wall_following(verbose=verbose)
-                    self.rt.start(self)
-                else: #we also use test_saw_wall to check if there is STILL a wall (in the wall_folowing function), so we put thread false
-                    return True
-            return False #to test, not sure we can return smg with the timer, if not, just change the function to return only when thread is false
-
-    def wall_following(self, motor_speed=100, wall_threshold=500, verbose=False):
+    def wall_following(self, motor_speed=100, wall_threshold=500, verbose=True):
         """
         Wall following behaviour of the FSM
         param motor_speed: the Thymio's motor speed
@@ -167,28 +166,37 @@ class Robot():
 
         if verbose: print("Starting wall following behaviour")
         found_path = False
+        self.move(l_speed=100, r_speed=100, verbose=False)
 
-        if verbose: print("\t Moving forward")
-        move(l_speed=motor_speed, r_speed=motor_speed)
-
+        print("fini")
         prev_state="forward"
-
+        count=0
         while not found_path:
-
-            if self.test_saw_wall(thread=False, wall_threshold=wall_threshold, verbose=False):
+            s_w = self.test_saw_wall(thread=False, wall_threshold=wall_threshold)
+            print("sw: {}".format(s_w))
+            if s_w:
                 if prev_state=="forward":
-                    if verbose: print("\tSaw wall, turning clockwise")
-                    self.move(l_speed=motor_speed, r_speed=-motor_speed)
+                    if verbose: print("Saw wall move right")
+                    self.move(l_speed=100, r_speed=-100, verbose=False) #turn 90 right
+                    time.sleep(0.1)
                     prev_state="turning"
-
+                    count=0
             else:
                 if prev_state=="turning":
-                    if verbose: print("\t Moving forward")
-                    self.move(l_speed=motor_speed, r_speed=motor_speed)
+                    if verbose: print("Moving forward")
+                    self.move(l_speed=100, r_speed=100, verbose=False)#forward
+                    time.sleep(0.5)
                     prev_state="forward"
-
-            if self.test_found_path(verbose):
+                else:
+                    self.move(l_speed=-100, r_speed=100, verbose=False)#turn 90 left
+                    time.sleep(0.15)
+                    if verbose: print("Moving left")
+                    prev_state="turning"
+                count +=1
+                print(count)
+            if count >= 10:
                 found_path = True
+                self.stop()
 
     def test_found_path(self, verbose=False):
         """
@@ -203,5 +211,8 @@ class Robot():
         None.
 
         """
+        for coord in self.path:
+            if self.get_position() == coord:
+                return True
 
         return False
