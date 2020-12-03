@@ -11,7 +11,7 @@ import cv2.aruco as aruco
 from time import sleep
 import unwarp
 from get_corners import get_corners
-
+import math
 
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
@@ -81,17 +81,20 @@ def detect_thymio(frame,pixel2mmx,pixel2mmy):
         pos = pos.astype(int)
         #print('Chair located at'+str(chair_x)+ " and " + str(chair_y))
         
-        #vec = (c[1,:] + c[2,:])/2 - (c[0,:] + c[3,:])/2 # Find orientation vector of chair
-        #vec = vec/ np.linalg.norm(vec) # Convert to unit vector
-
+        vec = (c[1,:] + c[2,:])/2 - (c[0,:] + c[3,:])/2 # Find orientation vector of chair
+        vec = vec/ np.linalg.norm(vec) # Convert to unit vector
+        #print(vec)
+        ang = math.atan2(vec[1], vec[0])
+        #ang = np.angle(vec,deg = True)
+        #print(ang)
         #arrow_endpos = (int(pos[0]+vec[0]*100),int(pos[1]+vec[1]*100))
         vec = []
         #cv2.arrowedLine(frame,tuple(pos),arrow_endpos,(255,0,0),(2),8,0,0.1) # Draw chair vector on img
     else:
         pos = []
-        vec = []
+        ang = []
     
-    return pos, vec
+    return pos, ang
 
 
 # Pixel to mmm ratio -- must double check
@@ -107,6 +110,8 @@ cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 ret, frame = cap.read()
 pts = get_corners(frame) # will be used to unwarp all images from live feed
 #print(pts)
+
+print(frame.shape)
 
 #warped = unwarp.four_point_transform(frame, pts)
 # show and save the warped image
@@ -124,12 +129,13 @@ while(True):
      # Get warped iamge
     warped = unwarp.four_point_transform(frame, pts)
     # Detect Thymio location
-    pos, vec = detect_thymio(warped,pixel2mmx,pixel2mmy)
+    pos, ang = detect_thymio(warped,pixel2mmx,pixel2mmy)
     
     
     if pos != []:
         newPos[0] = pos[0]
         newPos[1] = pos[1]
+        newPos[2] = ang
     
     print(newPos)
     #cv2.imwrite('sample-map.jpg',frame)

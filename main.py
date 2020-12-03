@@ -26,10 +26,23 @@ from ekf import *
 from IPython.display import clear_output
 
 cap = cv2.VideoCapture(1) # might not be 1, depending on computer
-pts = get_video.init_video(cap, save_img=False)
+
+ret, frame = cap.read()
+#cv2.imshow('hi',frame)
+pts = get_corners(frame) # will be used to unwarp all images from live feed
+    #print(pts)
+    
+save_img = False
+if save_img:
+    warped = unwarp.four_point_transform(frame, pts)
+    # show and save the warped image
+    cv2.imshow("Warped", warped)
+    cv2.imwrite('warped-img.jpg',warped)
+
+#print(pts)
 
 #/dev/cu.usbmodem141101	/dev/cu.usbmodem141401
-th = Thymio.serial(port="/dev/cu.usbmodem141401", refreshing_rate=0.1) #/dev/ttyACM0 for linux
+th = Thymio.serial(port='COM3', refreshing_rate=0.1) #/dev/ttyACM0 for linux
 my_th = Robot(th)
 
 time.sleep(3) # To make sure the Thymio has had time to connect
@@ -50,7 +63,7 @@ PEst = np.eye(5)
 hxEst = xEst
 hxTrue = xTrue
 #hxDR = xTrue
-hz = np.zeros((3, 1))
+hz = np.zeros((5, 1))
 
 def repeated_function():
     #global curr_speed, left, right
@@ -63,7 +76,7 @@ def repeated_function():
 
     u = calc_input(left, right)
 
-    xTrue, z = observation(xTrue, u)
+    xTrue, z = observation(xTrue, u, cap, pts)
     xEst, PEst = ekf_estimation(xEst, PEst, z, u)
 
     my_th.set_position([xEst[0][0], xEst[1][0], np.rad2deg(xEst[2][0])])
@@ -95,17 +108,19 @@ def repeated_function():
     plt.xlabel('x')
     plt.ylabel('y')
     #plt.pause(0.001)
+    
+    plt.show()
 
-rt_motion = RepeatedTimer(0.1, repeated_function)
+rt_motion = RepeatedTimer(1, repeated_function)
 
 #add map readings
 my_th.set_speed(100)
-my_th.set_position([0,0,0])
-my_th.move_to_target([0,50])
-my_th.move_to_target([50,50])
-my_th.move_to_target([50,100])
-my_th.move_to_target([70,100])
-my_th.move_to_target([80,140])
+my_th.set_position([100,100,0])
+my_th.move_to_target([100-500])
+my_th.move_to_target([-500,-500])
+# my_th.move_to_target([50,100])
+# my_th.move_to_target([70,100])
+# my_th.move_to_target([80,140])
 
 print('My position:', my_th.get_position())
 

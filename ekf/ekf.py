@@ -4,17 +4,21 @@ Created on Wed Nov 25 22:35:07 2020
 
 @author: kevin
 """
-
-sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
-
+import os
+import sys
 import math
 import cv2
 import cv2.aruco as aruco
 from time import sleep
+
+
+sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
+
 import get_video
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+
 
 # Covariance for EKF simulation
 Q = np.diag([
@@ -28,15 +32,15 @@ R = np.diag([
     0.0001,
     0.0001,
     np.deg2rad(0.0001),
-    #0.0001,
-    #0.0001
+    0.0001,
+    0.0001
     ]) ** 2  # Observation x,y, theta position and v,w covariance
 
 #  Simulation parameter
 #INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
 #GPS_NOISE = np.diag([0.0001, 0.0001, 0.0001]) ** 2
 
-DT = 0.1 # time tick [s]
+DT = 1 # time tick [s]
 SIM_TIME = 15  # simulation time [s]
 
 show_animation = True
@@ -84,11 +88,11 @@ def observation_model(x):
         [1, 0, 0, 0, 0],
         [0, 1, 0, 0, 0],
         [0, 0, 1, 0, 0],
-        #[0, 0, 0, 1, 0],
-        #[0, 0, 0, 0, 1]
+        [0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 1]
         ])
 
-    z = H @ x + R @ np.random.randn(3, 1)
+    z = H @ x + R @ np.random.randn(5, 1)
     return z
 
 
@@ -125,19 +129,19 @@ def jacob_h():
         [1, 0, 0, 0, 0],
         [0, 1, 0, 0, 0],
         [0, 0, 1, 0, 0],
-        #[0, 0, 0, 1, 0],
-        #[0, 0, 0, 0, 1]
+        [0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 1]
         ])
 
     return jH
 
 
-def observation(xTrue, u):
+def observation(xTrue, u, cap, pts):
     xTrue = motion_model(xTrue, u)
 
     # add noise to gps x-y
     #measure camera
-    camera_pos = get_video.get_video(cap, pts):
+    camera_pos = get_video.get_video(cap, pts)
     z = observation_model(camera_pos)
 
     # add noise to input

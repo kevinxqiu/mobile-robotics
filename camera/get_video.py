@@ -81,22 +81,21 @@ def detect_thymio(frame,pixel2mmx,pixel2mmy):
         pos = pos.astype(int)
         #print('Chair located at'+str(chair_x)+ " and " + str(chair_y))
         
-        #vec = (c[1,:] + c[2,:])/2 - (c[0,:] + c[3,:])/2 # Find orientation vector of chair
-        #vec = vec/ np.linalg.norm(vec) # Convert to unit vector
-
+        vec = (c[1,:] + c[2,:])/2 - (c[0,:] + c[3,:])/2 # Find orientation vector of chair
+        vec = vec/ np.linalg.norm(vec) # Convert to unit vector
+        ang = np.angle(vec,deg = False)
+        print(ang)
         #arrow_endpos = (int(pos[0]+vec[0]*100),int(pos[1]+vec[1]*100))
-        vec = []
         #cv2.arrowedLine(frame,tuple(pos),arrow_endpos,(255,0,0),(2),8,0,0.1) # Draw chair vector on img
     else:
         pos = []
-        vec = []
+        ang = []
     
-    return pos, vec
+    return pos, ang
 
 
 # Pixel to mmm ratio -- must double check
-pixel2mmx = 2.5
-pixel2mmy = 2.1
+
 
 #=============================================================================================================================================================================================='
 #   MAIN LOOP
@@ -122,7 +121,10 @@ def init_video(cap, save_img):
 
 def get_video(cap, pts):
     # initialize position
-    newPos = np.zeros((4,1))
+    pixel2mmx = 2.56
+    pixel2mmy = 2.14
+    newPos = np.zeros((5,1))
+
     # Capture frame-by-frame
     ret, frame = cap.read()
     #frame = cv2.flip(frame,0)
@@ -130,11 +132,12 @@ def get_video(cap, pts):
      # Get warped iamge
     warped = unwarp.four_point_transform(frame, pts)
     # Detect Thymio location
-    pos, vec = detect_thymio(warped,pixel2mmx,pixel2mmy)
+    pos, ang = detect_thymio(warped,pixel2mmx,pixel2mmy)
     
     if pos != []:
         newPos[0] = pos[0]
         newPos[1] = pos[1]
+        newPos[2] = -ang
     
     print(newPos)
     #cv2.imwrite('sample-map.jpg',frame)
@@ -142,13 +145,13 @@ def get_video(cap, pts):
     
     #warped = cv2.resize(warped,(2*w, 2*h))
     
-    kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
-    img = cv2.filter2D(warped, -1, kernel)
+    #kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
+    #img = cv2.filter2D(warped, -1, kernel)
 
     # Print original live video feed
-    cv2.imshow('Image',img)
+    cv2.imshow('Image',warped)
 
-    return pos
+    return newPos
 
 
 # When everything done, release the capture
