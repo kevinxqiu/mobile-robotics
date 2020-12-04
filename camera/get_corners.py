@@ -72,8 +72,9 @@ def get_corners(img):
     #perimeter = cv2.arcLength(big_contour,True)
     epsilon = 0.01*cv2.arcLength(big_contour,True)
     approx = cv2.approxPolyDP(big_contour,epsilon,True)
-    
+    #print(approx)
     r,h,c = approx.shape
+    
     if r != 4:
         print('ERROR! Could not find vertices to warp image. Make sure the entire map is shown in the image frame...')
         pass
@@ -107,7 +108,7 @@ def get_corners(img):
         #cv2.imshow("VERT", vert)
         #cv2.imshow("HORIZ", horiz)
         cv2.imshow("RECT", rect)
-        cv2.imshow("BBOX", rot_bbox)
+        #cv2.imshow("BBOX", rot_bbox)
         cv2.waitKey(0)
     
     return approx

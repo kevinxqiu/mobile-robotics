@@ -7,10 +7,6 @@ Created on Wed Nov 25 22:35:07 2020
 import os
 import sys
 import math
-import cv2
-import cv2.aruco as aruco
-from time import sleep
-
 
 sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
 
@@ -136,12 +132,12 @@ def jacob_h():
     return jH
 
 
-def observation(xTrue, u, cap, pts):
+def observation(xTrue, u, warped):
     xTrue = motion_model(xTrue, u)
 
     # add noise to gps x-y
     #measure camera
-    camera_pos = get_video.get_video(cap, pts)
+    camera_pos = get_video.get_video(warped)
     z = observation_model(camera_pos)
 
     # add noise to input

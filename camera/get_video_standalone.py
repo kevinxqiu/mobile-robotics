@@ -65,6 +65,8 @@ def detect_thymio(frame,pixel2mmx,pixel2mmy):
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict)
     corners = np.array(corners)
     
+    Y, X = gray.shape
+   
     # Plot identified markers, if any
     if ids is not None:
         frame_markers = aruco.drawDetectedMarkers(frame, corners, ids,borderColor = (0,0,255)) # convert back to RGBA
@@ -76,9 +78,9 @@ def detect_thymio(frame,pixel2mmx,pixel2mmy):
         
         c = corners[0][0] # Find center of marker
             
-        pos = np.array([c[:,0].mean()*pixel2mmy,  c[:,1].mean()*pixel2mmx])
-        
+        pos = np.array([c[:,0].mean()*pixel2mmy,  (Y-c[:,1].mean())*pixel2mmx])
         pos = pos.astype(int)
+        
         #print('Chair located at'+str(chair_x)+ " and " + str(chair_y))
         
         vec = (c[1,:] + c[2,:])/2 - (c[0,:] + c[3,:])/2 # Find orientation vector of chair
@@ -109,9 +111,8 @@ cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 # First we get the warped image
 ret, frame = cap.read()
 pts = get_corners(frame) # will be used to unwarp all images from live feed
-#print(pts)
 
-print(frame.shape)
+#print(pts)
 
 #warped = unwarp.four_point_transform(frame, pts)
 # show and save the warped image
@@ -130,11 +131,11 @@ while(True):
     warped = unwarp.four_point_transform(frame, pts)
     # Detect Thymio location
     pos, ang = detect_thymio(warped,pixel2mmx,pixel2mmy)
+
     
-    
-    if pos != []:
-        newPos[0] = pos[0]
-        newPos[1] = pos[1]
+    if pos.any():
+        newPos[0] = pos[0].astype(int)
+        newPos[1] = pos[1].astype(int)
         newPos[2] = ang
     
     print(newPos)

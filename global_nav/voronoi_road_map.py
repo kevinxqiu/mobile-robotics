@@ -130,28 +130,23 @@ class VoronoiRoadMapPlanner:
     
 
 
-
-def get_path():
+def get_path(gray, show_animation,start,goal):
     print(__file__ + " start!!")
-    
-    # start and goal position
-    sx = 5.0  # [mm]
-    sy = 5.0  # [mm]
-    gx = 50.0  # [mm]
-    gy = 20.0  # [mm]
-    robot_size = 2.0  # [mm]
-    
-    img = 'warped-img.jpg'
-    
+    robot_size = 100  # [mm]
     pixel2mmx = 2.56
     pixel2mmy = 2.14
     factor = 20
+
+    # Convert start and end positions based on new factor size
+    start = np.array(start)/factor
+    goal = np.array(goal)/factor
+    robot_size = robot_size/factor
     
-    gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+    #print(start)
+    
     row, col = gray.shape[:2]
     #bottom = gray[row-2:row, 0:col]
     #mean = cv2.mean(bottom)[0]
-    print(gray.shape)
     bordersize = 5
     
     border = cv2.copyMakeBorder(
@@ -164,74 +159,53 @@ def get_path():
         value=[0, 0, 0]
     )
     
-    print(border.shape)
-    
     h,w = gray.shape
     #plt.imshow(gray)
     
     new_img = cv2.resize(border,(int(pixel2mmy*w/factor), int(pixel2mmx*h/factor))) 
     
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
-
-    #thresh = np.asarray(thresh)
     thresh = np.rot90(thresh,k=1, axes=(1,0))
     #thresh = cv2.flip(thresh,0)
-    print(thresh.shape)
     
     coords = np.column_stack(np.where(thresh == 255))
     coords = np.transpose(coords)
     
-    ox = coords[0,:]
-    print(ox.shape)
-    ox = ox.tolist()
-    
-    oy = coords[1,:]
-    oy = oy.tolist()
-    
-    
-    # ox = []
-    # oy = []
-
-    # for i in range(60):
-    #     ox.append(i)
-    #     oy.append(0.0)
-    # for i in range(60):
-    #     ox.append(60.0)
-    #     oy.append(i)
-    # for i in range(61):
-    #     ox.append(i)
-    #     oy.append(60.0)
-    # for i in range(61):
-    #     ox.append(0.0)
-    #     oy.append(i)
-    # for i in range(40):
-    #     ox.append(20.0)
-    #     oy.append(i)
-    # for i in range(40):
-    #     ox.append(40.0)
-    #     oy.append(60.0 - i)
-    
-    #print(ox)
+    ox = coords[0,:].tolist()
+    oy = coords[1,:].tolist()
     
     if show_animation:  # pragma: no cover
         plt.plot(ox, oy, ".k")
-        plt.plot(sx, sy, "^r")
-        plt.plot(gx, gy, "^c")
+        plt.plot(start[0], start[1], "^r")
+        plt.plot(goal[0], goal[1], "^c")
         plt.grid(True)
         plt.axis("equal")
 
-    rx, ry = VoronoiRoadMapPlanner().planning(sx, sy, gx, gy, ox, oy,
+    rx, ry = VoronoiRoadMapPlanner().planning(start[0], start[1], goal[0], goal[1], ox, oy,
                                               robot_size)
-    print(rx)
+    
     assert rx, 'Cannot found path'
 
     if show_animation:  # pragma: no cover
         plt.plot(rx, ry, "-r")
         plt.pause(0.1)
         plt.show()
+        
+    # Convert scaled value back to mm values in integer format
+    rx = (np.array(rx)*factor).astype(int)
+    ry = (np.array(ry)*factor).astype(int)
+    
+    path = np.stack((rx,ry),axis = -1)
+    return path
 
-    return rx, ry
 
-
-if __name__ == '__main__':
-    rx, ry  = get_path()
+# if __name__ == '__main__':
+    
+#     # start and goal position
+#     start = np.array([100, 100])
+#     end = np.array([1000, 400])
+    
+#     img = 'warped-img.jpg'
+#     gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+#     path  = get_path(gray,True,start,end)
+#     print(path)

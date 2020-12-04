@@ -1,7 +1,4 @@
-import os
-import sys
 import time
-import serial
 import math
 import numpy as np
 from threading import Timer

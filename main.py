@@ -1,19 +1,17 @@
 
 import cv2
-import cv2.aruco as aruco
-from time import sleep
 import os
 import sys
 import time
-import serial
-import math
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Adding the src folder in the current directory as it contains the script
 # with the Thymio class
 sys.path.insert(0, os.path.join(os.getcwd(), 'utils'))
 sys.path.insert(0, os.path.join(os.getcwd(), 'ekf'))
 sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
+sys.path.insert(0, os.path.join(os.getcwd(), 'global_nav'))
 
 #print(os.getcwd())
 import unwarp
@@ -22,28 +20,66 @@ import get_video
 from Thymio import Thymio
 from motion import Robot
 from motion import RepeatedTimer
-from ekf import *
-from IPython.display import clear_output
+import ekf
+#from IPython.display import clear_output
+import voronoi_road_map
 
+
+
+'''
+START VIDEO
+'''
 cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 
 ret, frame = cap.read()
+#frame = cv2.flip(frame,0) # Flip image axis for calculations, need to flip back for display
+
 #cv2.imshow('hi',frame)
 pts = get_corners(frame) # will be used to unwarp all images from live feed
-    #print(pts)
-    
-save_img = False
-if save_img:
-    warped = unwarp.four_point_transform(frame, pts)
-    # show and save the warped image
-    cv2.imshow("Warped", warped)
-    cv2.imwrite('warped-img.jpg',warped)
-
 #print(pts)
+warped = unwarp.four_point_transform(frame, pts)
 
+# save_img = True
+# if save_img:
+#     # show and save the warped image
+#     cv2.imshow("Map", warped)
+#     cv2.imwrite('map.jpg',warped)
+
+'''
+RUN PATH PLANNING
+'''
+# start and goal position
+# Map size is 1188 x 840
+start = np.array([137, 790]).astype(int)
+end = np.array([1050, 200]).astype(int)
+
+img = 'map.jpg'
+gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+# Isolate green layer
+# b, g, r = cv2.split(img)
+# (thresh, g) = cv2.threshold(g, 127, 255, cv2.THRESH_BINARY)
+
+# M = cv2.moments(g)
+# if M["m00"] != 0 :
+#     cX = int(M["m10"] / M["m00"])
+#     cY = int(M["m01"] / M["m00"])
+#     start = [cX,cY]
+# else:
+#     start = []
+pixel2mmx = 2.56
+pixel2mmy = 2.14
+
+path  = voronoi_road_map.get_path(gray,True,start,end)
+print(path)
+
+
+'''
+INITIALIZE THYMIO
+'''
 #/dev/cu.usbmodem141101	/dev/cu.usbmodem141401
-th = Thymio.serial(port='COM3', refreshing_rate=0.1) #/dev/ttyACM0 for linux
+th = Thymio.serial(port='COM4', refreshing_rate=0.1) #/dev/ttyACM0 for linux
 my_th = Robot(th)
+my_th.set_position([start[0],start[1],0])
 
 time.sleep(3) # To make sure the Thymio has had time to connect
 
@@ -70,15 +106,21 @@ def repeated_function():
     global xEst, xTrue, PEst, hxEst, hxTrue, hz
     #xDR,
     #hxDR,
-
+    
+    ret, frame = cap.read()
+    frame = cv2.flip(frame,0) 
+    warped = unwarp.four_point_transform(frame, pts)
+    
+    #measure speed from thymio
     curr_speed = my_th.get_speed()
     left, right = curr_speed[0], curr_speed[1]
-
-    u = calc_input(left, right)
-
-    xTrue, z = observation(xTrue, u, cap, pts)
-    xEst, PEst = ekf_estimation(xEst, PEst, z, u)
-
+    #calculate velocity input
+    u = ekf.calc_input(left, right)
+    #measure position from camera
+    xTrue, z = ekf.observation(xTrue, u, warped)
+    #run EKF to estimate position
+    xEst, PEst = ekf.ekf_estimation(xEst, PEst, z, u)
+    #correct position from estimate
     my_th.set_position([xEst[0][0], xEst[1][0], np.rad2deg(xEst[2][0])])
     print('My position:', my_th.get_position())
 
@@ -111,18 +153,17 @@ def repeated_function():
     
     plt.show()
 
+    # Print original live video feed
+    cv2.imshow('Image',cv2.flip(warped,0))
+
 rt_motion = RepeatedTimer(1, repeated_function)
 
 #add map readings
 my_th.set_speed(100)
-my_th.set_position([100,100,0])
-my_th.move_to_target([100-500])
-my_th.move_to_target([-500,-500])
-# my_th.move_to_target([50,100])
-# my_th.move_to_target([70,100])
-# my_th.move_to_target([80,140])
 
-print('My position:', my_th.get_position())
+for point in path:
+    my_th.move_to_target([point[0],point[1]])
+    print('My position:', my_th.get_position())
 
 # my_th.go_straight(200)
 # my_th.turn(45)

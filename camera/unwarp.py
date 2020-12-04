@@ -71,13 +71,13 @@ def warp_img(img):
     #img = cv2.imread("sample-map.jpg")
     pts = get_corners(img)
     #print(pts)
-    
     warped = four_point_transform(img, pts)
     # show the original and warped images
+    
     cv2.imshow("Original", img)
     cv2.imshow("Warped", warped)
     
-    cv2.imwrite('warped-img.jpg',warped)
+    #cv2.imwrite('warped-img.jpg',warped)
     
     cv2.waitKey(0)
 
