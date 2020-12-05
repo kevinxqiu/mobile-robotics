@@ -140,10 +140,13 @@ class Robot():
         t=0
         while t < target_time:
 
-            while self.flag_local:
-                time.sleep(0.1)
-            t += 0.05
-            time.sleep(0.05)
+            if not self.flag_local:
+                t += 0.05
+                time.sleep(0.05)
+            else:
+                t= target_time
+                while self.flag_local
+                    time.sleep(0.1)
 
     def turn(self, turn_angle):
         print("turn_angle:{}".format(turn_angle))
