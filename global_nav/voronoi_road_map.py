@@ -4,6 +4,8 @@ Voronoi Road Map Planner
 
 author: Atsushi Sakai (@Atsushi_twi)
 
+author: Celinna Ju 
+
 """
 
 import math
@@ -130,7 +132,7 @@ class VoronoiRoadMapPlanner:
     
 
 
-def get_path(gray, show_animation,start,goal):
+def get_path(img, show_animation,start,goal):
     print(__file__ + " start!!")
 
     robot_size = 100  # [mm]
@@ -143,13 +145,11 @@ def get_path(gray, show_animation,start,goal):
     
     #print(start)
     
-    row, col = gray.shape[:2]
-    #bottom = gray[row-2:row, 0:col]
-    #mean = cv2.mean(bottom)[0]
+    row, col = img.shape[:2]
     bordersize = 5
     
     border = cv2.copyMakeBorder(
-        gray,
+        img,
         top=bordersize,
         bottom=bordersize,
         left=bordersize,
@@ -159,11 +159,13 @@ def get_path(gray, show_animation,start,goal):
     )
     
     # Map size is 1188 x 840
+    X,Y = img.shape # X and Y are flipped here
+
+    # pixel2mmx = 2.56
+    pixel2mmy = 1188 / Y
+    pixel2mmx = 840 / X
     
-    Y,X = gray.shape
-    #plt.imshow(gray)
-    pixel2mmx = int(1188/X)
-    pixel2mmy = int(840/Y)
+    # pixel2mmy = 2.14
     new_img = cv2.resize(border,(int(pixel2mmy*Y/factor), int(pixel2mmx*X/factor))) 
     
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
@@ -202,12 +204,11 @@ def get_path(gray, show_animation,start,goal):
 
 
 # if __name__ == '__main__':
-    
 #     # start and goal position
-#     start = np.array([100, 100])
-#     end = np.array([1000, 400])
+#     start = np.array([130, 700])
+#     end = np.array([1050, 200])
     
-#     img = 'warped-img.jpg'
+#     img = 'map2.jpg'
 #     gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 #     path  = get_path(gray,True,start,end)
-#     print(path)
+#     #print(path)

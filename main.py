@@ -35,13 +35,14 @@ ret, frame = cap.read()
 pts = get_corners(frame) # will be used to unwarp all images from live feed
 #print(pts)
 warped = unwarp.four_point_transform(frame, pts)
-
-# Map size is 1188 x 840
-Y,X = warped.shape
-pixel2mmx = int(1188/X)
-pixel2mmy = int(840/Y)
-
 gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+# Map size is 1188 x 840
+Y,X = gray.shape
+
+pixel2mmx = 2.56
+pixel2mmy = 2.14
+
+
 pos, ang = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
 
 # Change to true if you want to save an image of the map
@@ -49,9 +50,7 @@ save_img = False
 if save_img:
     # show and save the warped image
     #cv2.imshow("Map1", warped)
-    cv2.imwrite('map1.jpg',warped)
-
-
+    cv2.imwrite('map2.jpg',warped)
 
 
 '''
@@ -62,7 +61,7 @@ RUN PATH PLANNING
 start = np.array([pos[0], pos[1]]).astype(int)
 end = np.array([1050, 200]).astype(int)
 
-img = 'map.jpg'
+img = 'map2.jpg'
 gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 # Isolate green layer
 # b, g, r = cv2.split(img)

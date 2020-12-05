@@ -20,7 +20,7 @@ aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 h = 480
 w = 640
 
-def detect_thymio(frame,pixel2mmx,pixel2mmy):
+def detect_thymio(img,pixel2mmx,pixel2mmy):
     """
     Parameters
     ----------
@@ -42,13 +42,13 @@ def detect_thymio(frame,pixel2mmx,pixel2mmy):
     # Detect aruco markers
     
     #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converts color image to gray space
-    corners, ids, rejectedImgPoints = aruco.detectMarkers(frame, aruco_dict)
+    corners, ids, rejectedImgPoints = aruco.detectMarkers(img, aruco_dict)
     corners = np.array(corners)
     
-    Y,X = frame.shape
+    Y,X = img.shape
     # Plot identified markers, if any
     if ids is not None:
-        frame_markers = aruco.drawDetectedMarkers(frame, corners, ids,borderColor = (0,0,255)) # convert back to RGBA
+        frame_markers = aruco.drawDetectedMarkers(img, corners, ids,borderColor = (0,0,255)) # convert back to RGBA
        
         #colorArr = cv2.cvtColor(color_rgb.copy(),cv2.COLOR_RGB2RGBA) # Converts images back to RGBA 
 
@@ -100,17 +100,19 @@ def init_video(cap, save_img):
 
 
 
-def get_video(warped):
+def get_video(img):
     # initialize position
     newPos = np.zeros((5,1))
 
-    Y,X = warped.shape
+    # Map size is 1188 x 840
+    X,Y = img.shape # X and Y are flipped here
     #plt.imshow(gray)
-    pixel2mmx = int(1188/X)
-    pixel2mmy = int(840/Y)
+    # pixel2mmx = 2.56
+    pixel2mmy = 1188 / Y
+    pixel2mmx = 840 / X
     
     # Detect Thymio location
-    pos, ang = detect_thymio(warped,pixel2mmx,pixel2mmy)
+    pos, ang = detect_thymio(img,pixel2mmx,pixel2mmy)
     
     if pos != []:
         newPos[0] = pos[0]

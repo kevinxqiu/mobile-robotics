@@ -10,8 +10,9 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import cKDTree
+import cv2
 
-from create_map import create_map
+from path_planning.create_map import create_map
 
 # parameter
 N_SAMPLE = 500  # number of sample_points
@@ -244,14 +245,15 @@ def sample_points(sx, sy, gx, gy, rr, ox, oy, obstacle_kd_tree):
 def main():
     print(__file__ + " start!!")
     
-    
-    ox, oy, scale = create_map('map.jpg')
+    img = cv2.imread('path_planning/map1.jpg')
+    img = cv2.flip(img, 0)
+    ox, oy, scale = create_map(img)
     # start and goal position
-    sx = 30.0/scale  # [m]
-    sy = 30.0/scale  # [m]
-    gx = 320.0/scale  # [m]
-    gy = 100.0/scale  # [m]
-    robot_size = 15.0/scale  # [m]
+    sx = 60.0/scale  # [m]
+    sy = 300.0/scale  # [m]
+    gx = 550.0/scale  # [m]
+    gy = 80.0/scale  # [m]
+    robot_size = 25.0/scale  # [m]
 
     #ox = []
     #oy = []
@@ -284,7 +286,7 @@ def main():
         plt.plot(gx, gy, "^c")
         plt.grid(True)
         #plt.axis("equal")
-        plt.axis([-20, 50, -2, 50])
+        #plt.axis([-20, 50, -2, 50])
     rx, ry = prm_planning(sx, sy, gx, gy, ox, oy, robot_size)
 
     #assert rx, 'Cannot found path'
