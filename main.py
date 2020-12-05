@@ -79,8 +79,8 @@ gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
 #print(np.rad2deg(ang))
 #print(pos)
-path  = voronoi_road_map.get_path(gray,True,start,end)
-# #print(path)
+show_animation = False
+path  = voronoi_road_map.get_path(gray,show_animation,start,end)
 
 
 '''
@@ -121,6 +121,8 @@ def repeated_function():
     
     ret, frame = cap.read()
     warped = unwarp.four_point_transform(frame, pts)
+    # Print original live video feed
+
     warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY) #converts color image to gray space
     
     #measure speed from thymio
@@ -132,10 +134,10 @@ def repeated_function():
     xTrue, z = ekf.observation(xTrue, u, warped)
     #run EKF to estimate position
     xEst, PEst = ekf.ekf_estimation(xEst, PEst, z, u)
-    print(xEst)
+    #print(xEst)
     #correct position from estimate
     my_th.set_position([xEst[0][0], xEst[1][0], np.rad2deg(xEst[2][0])])
-    #print(' position:', my_th.get_position())
+    print(' position:', my_th.get_position())
     hpos.append(my_th.get_position)
     # store data history
     hxEst = np.hstack((hxEst, xEst))
@@ -163,12 +165,11 @@ def repeated_function():
     plt.xlabel('x')
     plt.ylabel('y')
     #plt.pause(0.001)
-    
     #plt.show()
-
-    # Print original live video feed
+    
     cv2.imshow('Image',warped)
-
+    cv2.waitKey()
+    
 rt_motion = RepeatedTimer(0.1, repeated_function)
 
 #add map readings

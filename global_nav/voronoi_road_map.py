@@ -15,17 +15,16 @@ from dijkstra_search import DijkstraSearch
 from scipy.spatial import cKDTree, Voronoi
 import cv2
 
-show_animation = True
 
 
 class VoronoiRoadMapPlanner:
 
     def __init__(self):
         # parameter
-        self.N_KNN = 10  # number of edge from one sampled point
-        self.MAX_EDGE_LEN = 30.0  # [m] Maximum edge length
+        self.N_KNN = 10.0  # number of edge from one sampled point
+        self.MAX_EDGE_LEN = 20.0  # [m] Maximum edge length
 
-    def planning(self, sx, sy, gx, gy, ox, oy, robot_radius):
+    def planning(self, sx, sy, gx, gy, ox, oy, robot_radius,show_animation):
         obstacle_tree = cKDTree(np.vstack((ox, oy)).T)
 
         sample_x, sample_y = self.voronoi_sampling(sx, sy, gx, gy, ox, oy)
@@ -132,7 +131,7 @@ class VoronoiRoadMapPlanner:
     
 
 
-def get_path(img, show_animation,start,goal):
+def get_path(img,show_animation,start,goal):
     print(__file__ + " start!!")
 
     robot_size = 100  # [mm]
@@ -187,7 +186,7 @@ def get_path(img, show_animation,start,goal):
         plt.axis("equal")
 
     rx, ry = VoronoiRoadMapPlanner().planning(start[0], start[1], goal[0], goal[1], ox, oy,
-                                              robot_size)
+                                              robot_size, show_animation)
     
     assert rx, 'Cannot found path'
 
@@ -200,16 +199,17 @@ def get_path(img, show_animation,start,goal):
     rx = (np.array(rx)*factor).astype(int)
     ry = (np.array(ry)*factor).astype(int)
     
+    
     path = np.stack((rx,ry),axis = -1)
     return path
 
 
-# if __name__ == '__main__':
-#     # start and goal position
-#     start = np.array([130, 700])
-#     end = np.array([1050, 200])
+if __name__ == '__main__':
+    # start and goal position
+    start = np.array([130, 700])
+    end = np.array([1020, 200])
     
-#     img = 'map2.jpg'
-#     gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-#     path  = get_path(gray,True,start,end)
-#     #print(path)
+    img = 'map2.jpg'
+    gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+    path  = get_path(gray,True,start,end)
+    #print(path)

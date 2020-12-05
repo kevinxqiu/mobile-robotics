@@ -19,6 +19,11 @@ while(cap.isOpened()):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     
+    save_img = True
+    if save_img:
+        cv2.imwrite('raw_map.jpg',frame)
+        break
+        
     #get_corners(gray)
     #pts = unwarp.warp_img(gray)
     #print(pts)
