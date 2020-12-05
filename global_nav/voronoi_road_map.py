@@ -132,9 +132,8 @@ class VoronoiRoadMapPlanner:
 
 def get_path(gray, show_animation,start,goal):
     print(__file__ + " start!!")
+
     robot_size = 100  # [mm]
-    pixel2mmx = 2.56
-    pixel2mmy = 2.14
     factor = 20
 
     # Convert start and end positions based on new factor size
@@ -159,10 +158,13 @@ def get_path(gray, show_animation,start,goal):
         value=[0, 0, 0]
     )
     
-    h,w = gray.shape
-    #plt.imshow(gray)
+    # Map size is 1188 x 840
     
-    new_img = cv2.resize(border,(int(pixel2mmy*w/factor), int(pixel2mmx*h/factor))) 
+    Y,X = gray.shape
+    #plt.imshow(gray)
+    pixel2mmx = int(1188/X)
+    pixel2mmy = int(840/Y)
+    new_img = cv2.resize(border,(int(pixel2mmy*Y/factor), int(pixel2mmx*X/factor))) 
     
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)
     thresh = np.rot90(thresh,k=1, axes=(1,0))

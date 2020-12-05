@@ -102,18 +102,14 @@ def init_video(cap, save_img):
 
 def get_video(warped):
     # initialize position
-    pixel2mmx = 2.56
-    pixel2mmy = 2.14
     newPos = np.zeros((5,1))
 
-    # Capture frame-by-frame
-    #ret, frame = cap.read()
-    #frame = cv2.flip(frame,0)
-    
-     # Get warped iamge
+    Y,X = warped.shape
+    #plt.imshow(gray)
+    pixel2mmx = int(1188/X)
+    pixel2mmy = int(840/Y)
     
     # Detect Thymio location
-    #gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
     pos, ang = detect_thymio(warped,pixel2mmx,pixel2mmy)
     
     if pos != []:
@@ -129,7 +125,6 @@ def get_video(warped):
     
     #kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
     #img = cv2.filter2D(warped, -1, kernel)
-
 
     return newPos
 

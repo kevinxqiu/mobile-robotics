@@ -32,31 +32,33 @@ START VIDEO
 cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 
 ret, frame = cap.read()
-
-#frame = cv2.flip(frame,0) # Flip image axis for calculations, need to flip back for display
-
-#cv2.imshow('hi',frame)
 pts = get_corners(frame) # will be used to unwarp all images from live feed
 #print(pts)
 warped = unwarp.four_point_transform(frame, pts)
 
-pixel2mmx = 2.56
-pixel2mmy = 2.14
+# Map size is 1188 x 840
+Y,X = warped.shape
+pixel2mmx = int(1188/X)
+pixel2mmy = int(840/Y)
+
 gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 pos, ang = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
 
+# Change to true if you want to save an image of the map
+save_img = False
+if save_img:
+    # show and save the warped image
+    #cv2.imshow("Map1", warped)
+    cv2.imwrite('map1.jpg',warped)
 
-# save_img = True
-# if save_img:
-#     # show and save the warped image
-#     #cv2.imshow("Map1", warped)
-#     cv2.imwrite('map1.jpg',warped)
+
+
 
 '''
 RUN PATH PLANNING
 '''
-# # start and goal position
-# # Map size is 1188 x 840
+# start and goal position
+# Map size is 1188 x 840
 start = np.array([pos[0], pos[1]]).astype(int)
 end = np.array([1050, 200]).astype(int)
 
