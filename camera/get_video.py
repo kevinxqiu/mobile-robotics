@@ -106,10 +106,12 @@ def get_video(img):
 
     # Map size is 1188 x 840
     X,Y = img.shape # X and Y are flipped here
-    #plt.imshow(gray)
-    # pixel2mmx = 2.56
-    pixel2mmy = 1188 / Y
+    
     pixel2mmx = 840 / X
+    pixel2mmy = 1188 / Y
+    # pixel2mmx = 2.56
+    # pixel2mmy = 2.14
+
     
     # Detect Thymio location
     pos, ang = detect_thymio(img,pixel2mmx,pixel2mmy)

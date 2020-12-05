@@ -160,12 +160,13 @@ def get_path(img, show_animation,start,goal):
     
     # Map size is 1188 x 840
     X,Y = img.shape # X and Y are flipped here
-
-    # pixel2mmx = 2.56
-    pixel2mmy = 1188 / Y
-    pixel2mmx = 840 / X
     
+    pixel2mmx = 840 / X
+    pixel2mmy = 1188 / Y
+    # pixel2mmx = 2.56
     # pixel2mmy = 2.14
+
+
     new_img = cv2.resize(border,(int(pixel2mmy*Y/factor), int(pixel2mmx*X/factor))) 
     
     ret, thresh = cv2.threshold(new_img,127,255,cv2.THRESH_BINARY_INV)

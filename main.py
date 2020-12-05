@@ -36,12 +36,14 @@ pts = get_corners(frame) # will be used to unwarp all images from live feed
 #print(pts)
 warped = unwarp.four_point_transform(frame, pts)
 gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+
 # Map size is 1188 x 840
-Y,X = gray.shape
+X,Y = gray.shape # X and Y are flipped here
 
-pixel2mmx = 2.56
-pixel2mmy = 2.14
-
+pixel2mmx = 840 / X
+pixel2mmy = 1188 / Y
+# pixel2mmx = 2.56
+# pixel2mmy = 2.14
 
 pos, ang = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
 
