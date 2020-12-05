@@ -12,6 +12,7 @@ class RepeatedTimer(object):
         self.kwargs     = kwargs
         self.is_running = False
         self.start()
+        self.flag_local = False
 
     def _run(self):
         self.is_running = False
@@ -128,11 +129,21 @@ class Robot():
         elif distance < 0: #go backwards
             self.move(l_speed=-self.speed, r_speed=-self.speed)
 
-        time.sleep(target_time)
+        #time.sleep(target_time)
+        self.time_move(target_time)
+
         t_end = time.time()
 
         if verbose:print("go_straight_took:{} s".format(t_end-t_0), "\n")
+        
+    def time_move(self, target_time):
+        t=0
+        while t < target_time:
 
+            while self.flag_local:
+                time.sleep(0.1)
+            t += 0.05
+            time.sleep(0.05)
 
     def turn(self, turn_angle):
         print("turn_angle:{}".format(turn_angle))
@@ -150,7 +161,8 @@ class Robot():
         else: #if turn_angle = 0, do not waste time
             return False
 
-        time.sleep(target_time)
+        #time.sleep(target_time)
+        self.time_move(target_time)
         t_end = time.time()
 
         print("actual_turn_took:{} s".format(t_end-t_0), "\n")
@@ -180,9 +192,11 @@ class Robot():
             if verbose: print("\t\t Saw a wall")
             if thread:
                 self.rt.stop() #we stop the thread to not execute test_saw_wall another time
+                self.flag_local = True
                 # Start following wall of obstacle
                 self.wall_following(verbose=verbose)
                 self.rt.start()
+                self.flag_local = False
             else: #we also use test_saw_wall to check if there is STILL a wall (in the wall_folowing function), so we put thread false
                 return True
         return False #to test, not sure we can return smg with the timer, if not, just change the function to return only when thread is false
@@ -203,9 +217,9 @@ class Robot():
         prev_state="forward"
         count=0
         while not found_path:
-            s_w = self.test_saw_wall(thread=False, wall_threshold=wall_threshold)
-            #if verbose: print("saw_wall: {}".format(s_w))
-            if s_w:
+            saw_wall = self.test_saw_wall(thread=False, wall_threshold=wall_threshold)
+            if verbose: print("saw_wall: {}".format(saw_wall))
+            if saw_wall:
                 if prev_state=="forward":
                     if verbose: print("Saw wall move right")
                     self.move(l_speed=100, r_speed=-100, verbose=False) #turn 90 right
@@ -224,26 +238,7 @@ class Robot():
                     if verbose: print("Moving left")
                     prev_state="turning"
                 count +=1
-                print(count)
-            if count >= 10:
+                if verbose: print("count: {}".format(count))
+            if count >= 15:
                 found_path = True
                 self.stop()
-
-    def test_found_path(self, verbose=False):
-        """
-        Test if the robot has returned to its original planned path
-        Parameters
-        ----------
-        verbose : TYPE, optional
-            DESCRIPTION. The default is False.
-
-        Returns
-        -------
-        None.
-
-        """
-        for coord in self.path:
-            if self.get_position() == coord:
-                return True
-
-        return False
