@@ -39,15 +39,27 @@ class Robot():
         self.speed_to_deg_s = math.degrees(2*self.speed_to_mm_s/self.wheeltowheel_length)
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
-        #self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
+        self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
 
     def get_position(self):
+        """
+        Get the absolut position of the robot
+        """
         return self.curr_pos
 
     def set_position(self, pos):
+        """
+        Set a new absolut position of the robot
+        Parameters:
+            pos (list): [x,y] coordinates
+        Returns: 
+        """
         self.curr_pos = pos
 
     def get_speed(self): #Measures Thymio speed at each wheel
+        """
+
+        """
         self.measured_speed = np.array([self.th["motor.left.speed"], self.th["motor.right.speed"]])
 
         if self.measured_speed[0] > 9999:
@@ -173,12 +185,11 @@ class Robot():
         found_path = False
         self.move(l_speed=100, r_speed=100, verbose=False)
 
-        print("fini")
         prev_state="forward"
         count=0
         while not found_path:
             s_w = self.test_saw_wall(thread=False, wall_threshold=wall_threshold)
-            print("sw: {}".format(s_w))
+            #if verbose: print("saw_wall: {}".format(s_w))
             if s_w:
                 if prev_state=="forward":
                     if verbose: print("Saw wall move right")
