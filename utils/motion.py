@@ -41,6 +41,7 @@ class Robot():
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
         self.flag_local = False
+        self.flag_local2 = False
 
     def get_position(self):
         """
@@ -145,8 +146,10 @@ class Robot():
                 time.sleep(0.05)
             else:
                 t= target_time
+                self.flag_local2 = True
                 while self.flag_local
-                    time.sleep(0.1)
+                    continue
+                    
 
     def turn(self, turn_angle):
         print("turn_angle:{}".format(turn_angle))

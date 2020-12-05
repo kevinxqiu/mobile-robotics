@@ -201,7 +201,10 @@ my_th.set_speed(100)
 #  [1050,  200]])
 
 for point in path:
-    my_th.move_to_target([point[0],point[1]])
+    if my_th.flag_local2 == True
+        my_th.flag_local2 = False
+        continue
+    my_th.move_to_target([point[0],point[1]]) 
     print('My position:', my_th.get_position())
 
 #time.sleep(100000)
