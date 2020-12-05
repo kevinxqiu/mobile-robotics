@@ -44,6 +44,8 @@ class Robot():
     def get_position(self):
         """
         Get the absolut position of the robot
+        Returns:
+            curr_pos = [x,y,angle] current absolut position and absolut angle
         """
         return self.curr_pos
 
@@ -51,14 +53,15 @@ class Robot():
         """
         Set a new absolut position of the robot
         Parameters:
-            pos (list): [x,y] coordinates
-        Returns: 
+            pos (list): [x,y, angle] current absolut position and absolut angle
         """
         self.curr_pos = pos
 
     def get_speed(self): #Measures Thymio speed at each wheel
         """
-
+        return the speed of the robot in mm/s
+        Returns: 
+            measured_speed (int): measured speed in mm/s
         """
         self.measured_speed = np.array([self.th["motor.left.speed"], self.th["motor.right.speed"]])
 
@@ -74,9 +77,19 @@ class Robot():
         return self.measured_speed
 
     def set_speed(self, speed):
+        """
+        Set the speed of the robot
+        Parameters: 
+            speed (int): new speed of the robot
+        """
         self.speed = speed
 
     def move_to_target(self, target_pos):
+        """
+        Move the robot to the given coordinates
+        Parameters: 
+            target_pos (list): [x,y] coordinates
+        """
         if target_pos == self.curr_pos[0:2]: #if the robot is already at the position or doesn't move
             return False
 
@@ -98,13 +111,16 @@ class Robot():
         #update position and angle of the robot
         #self.curr_pos = [target_pos[0],target_pos[1],path_angle]
 
-    def go_straight(self, distance):
-        print("distance:{}".format(distance))
+    def go_straight(self, distance, verbose=True):
+        """
+        Move the robot to a given distance in mm
+        Parameters: 
+            distance (int): distance in mm
+            verbose: whether to print status messages or not
+        """
+        if verbose: print("distance:{}".format(distance))
 
         target_time = abs(distance) / (self.speed * self.speed_to_mm_s)  #linear fit model from mm to s for v=100 (change to Kalman)
-
-        #print("target_go_straight:{} s".format(target_time))
-
         t_0 = time.time()
 
         if distance > 0: #go forward
@@ -115,9 +131,8 @@ class Robot():
         time.sleep(target_time)
         t_end = time.time()
 
-        print("go_straight_took:{} s".format(t_end-t_0), "\n")
+        if verbose:print("go_straight_took:{} s".format(t_end-t_0), "\n")
 
-        #time.sleep(0.1)
 
     def turn(self, turn_angle):
         print("turn_angle:{}".format(turn_angle))
