@@ -201,7 +201,7 @@ my_th.set_speed(100)
 #  [1050,  200]])
 
 for point in path:
-    if my_th.flag_skip == True
+    if my_th.flag_skip == True:
         my_th.flag_skip = False
         continue
     my_th.move_to_target([point[0],point[1]]) 
