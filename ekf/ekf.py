@@ -36,7 +36,7 @@ R = np.diag([
 #INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
 #GPS_NOISE = np.diag([0.0001, 0.0001, 0.0001]) ** 2
 
-DT = 1 # time tick [s]
+DT = 0.1 # time tick [s]
 SIM_TIME = 15  # simulation time [s]
 
 show_animation = True
@@ -138,6 +138,7 @@ def observation(xTrue, u, warped):
     # add noise to gps x-y
     #measure camera
     camera_pos = get_video.get_video(warped)
+    print(camera_pos)
     z = observation_model(camera_pos)
 
     # add noise to input

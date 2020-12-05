@@ -32,6 +32,7 @@ START VIDEO
 cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 
 ret, frame = cap.read()
+
 #frame = cv2.flip(frame,0) # Flip image axis for calculations, need to flip back for display
 
 #cv2.imshow('hi',frame)
@@ -39,18 +40,24 @@ pts = get_corners(frame) # will be used to unwarp all images from live feed
 #print(pts)
 warped = unwarp.four_point_transform(frame, pts)
 
+pixel2mmx = 2.56
+pixel2mmy = 2.14
+gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+pos, ang = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
+
+
 # save_img = True
 # if save_img:
 #     # show and save the warped image
-#     cv2.imshow("Map", warped)
-#     cv2.imwrite('map.jpg',warped)
+#     #cv2.imshow("Map1", warped)
+#     cv2.imwrite('map1.jpg',warped)
 
 '''
 RUN PATH PLANNING
 '''
-# start and goal position
-# Map size is 1188 x 840
-start = np.array([137, 790]).astype(int)
+# # start and goal position
+# # Map size is 1188 x 840
+start = np.array([pos[0], pos[1]]).astype(int)
 end = np.array([1050, 200]).astype(int)
 
 img = 'map.jpg'
@@ -66,11 +73,11 @@ gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 #     start = [cX,cY]
 # else:
 #     start = []
-pixel2mmx = 2.56
-pixel2mmy = 2.14
 
+#print(np.rad2deg(ang))
+#print(pos)
 path  = voronoi_road_map.get_path(gray,True,start,end)
-print(path)
+# #print(path)
 
 
 '''
@@ -79,7 +86,7 @@ INITIALIZE THYMIO
 #/dev/cu.usbmodem141101	/dev/cu.usbmodem141401
 th = Thymio.serial(port='COM4', refreshing_rate=0.1) #/dev/ttyACM0 for linux
 my_th = Robot(th)
-my_th.set_position([start[0],start[1],0])
+my_th.set_position([start[0],start[1],np.rad2deg(ang)])
 
 time.sleep(3) # To make sure the Thymio has had time to connect
 
@@ -104,12 +111,14 @@ hz = np.zeros((5, 1))
 def repeated_function():
     #global curr_speed, left, right
     global xEst, xTrue, PEst, hxEst, hxTrue, hz
+    global hpos
+    hpos = []
     #xDR,
     #hxDR,
     
     ret, frame = cap.read()
-    frame = cv2.flip(frame,0) 
     warped = unwarp.four_point_transform(frame, pts)
+    warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY) #converts color image to gray space
     
     #measure speed from thymio
     curr_speed = my_th.get_speed()
@@ -120,10 +129,11 @@ def repeated_function():
     xTrue, z = ekf.observation(xTrue, u, warped)
     #run EKF to estimate position
     xEst, PEst = ekf.ekf_estimation(xEst, PEst, z, u)
+    print(xEst)
     #correct position from estimate
     my_th.set_position([xEst[0][0], xEst[1][0], np.rad2deg(xEst[2][0])])
-    print('My position:', my_th.get_position())
-
+    #print(' position:', my_th.get_position())
+    hpos.append(my_th.get_position)
     # store data history
     hxEst = np.hstack((hxEst, xEst))
     #hxDR = np.hstack((hxDR, xDR))
@@ -151,25 +161,53 @@ def repeated_function():
     plt.ylabel('y')
     #plt.pause(0.001)
     
-    plt.show()
+    #plt.show()
 
     # Print original live video feed
-    cv2.imshow('Image',cv2.flip(warped,0))
+    cv2.imshow('Image',warped)
 
-rt_motion = RepeatedTimer(1, repeated_function)
+rt_motion = RepeatedTimer(0.1, repeated_function)
 
 #add map readings
 my_th.set_speed(100)
+
+# path = np.array([[ 137, 790],
+#  [ 160, 710],
+#  [ 160, 630],
+#  [ 160,  530],
+#  [ 160,  430],
+#  [ 163,  330],
+#  [ 195,  230],
+#  [ 250,  196],
+#  [ 330,  190],
+#  [ 410,  190],
+#  [ 510,  191],
+#  [ 580,  230],
+#  [ 605,  290],
+#  [ 620,  390],
+#  [ 620,  450],
+#  [ 634,  550],
+#  [ 684,  650],
+#  [ 698,  670],
+#  [ 770,  700],
+#  [ 790,  700],
+#  [ 870,  700],
+#  [ 970,  697],
+#  [1030,  730],
+#  [1050,  200]])
 
 for point in path:
     my_th.move_to_target([point[0],point[1]])
     print('My position:', my_th.get_position())
 
-# my_th.go_straight(200)
-# my_th.turn(45)
+#time.sleep(100000)
+#my_th.move_to_target([137, 200])
+#my_th.move_to_target([550, 200])
+
 # my_th.go_straight(100)
 # my_th.turn(90)
 # my_th.go_straight(100)
+print(hpos)
 
 rt_motion.stop()
 my_th.stop()
