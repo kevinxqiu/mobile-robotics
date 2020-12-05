@@ -146,7 +146,7 @@ class Robot():
                 time.sleep(0.05)
             else:
                 t= target_time
-                while self.flag_local
+                while self.flag_local:
                     continue
                     
 
