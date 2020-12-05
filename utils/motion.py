@@ -41,7 +41,7 @@ class Robot():
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
         self.flag_local = False
-        self.flag_local2 = False
+        self.flag_skip = False
 
     def get_position(self):
         """
@@ -146,7 +146,6 @@ class Robot():
                 time.sleep(0.05)
             else:
                 t= target_time
-                self.flag_local2 = True
                 while self.flag_local
                     continue
                     
@@ -199,6 +198,7 @@ class Robot():
             if thread:
                 self.rt.stop() #we stop the thread to not execute test_saw_wall another time
                 self.flag_local = True
+                self.flag_skip = True
                 # Start following wall of obstacle
                 self.wall_following(verbose=verbose)
                 self.rt.start()
