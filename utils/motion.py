@@ -12,7 +12,6 @@ class RepeatedTimer(object):
         self.kwargs     = kwargs
         self.is_running = False
         self.start()
-        self.flag_local = False
 
     def _run(self):
         self.is_running = False
@@ -41,6 +40,7 @@ class Robot():
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
+        self.flag_local = False
 
     def get_position(self):
         """
