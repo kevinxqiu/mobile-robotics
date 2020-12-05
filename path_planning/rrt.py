@@ -7,7 +7,7 @@ Created on Thu Nov 19 16:50:51 2020
 
 import math
 import random
-
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -217,7 +217,10 @@ def main(gx=30.0, gy=10.0):
     #obstacleList = [(5, 5), (3, 6), (3, 8), (3, 10), (7, 5),
     #                (9, 5), (8, 10)]  # [x, y, radius]
     
-    ox, oy, scale = create_map('map.jpg')
+    img = cv2.imread('path_planning/map1.jpg')
+    img = cv2.flip(img, 0)
+    ox, oy, scale = create_map(img)
+    
     obstacleList = list(zip(ox, oy))
     # Set Initial parameters
     rrt = RRT(

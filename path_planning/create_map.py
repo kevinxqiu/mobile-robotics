@@ -10,10 +10,10 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 
 #fig, ax = plt.subplots(1,2)
-def create_map(image_dir):
+def create_map(image):
     threshold = 0.35
-    scale = 10    
-    image = plt.imread(image_dir)
+    scale = 1    
+    #image = plt.imread(image_dir)
     
     
     height, width, channel = image.shape
