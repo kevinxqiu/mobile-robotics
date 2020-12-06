@@ -1,11 +1,10 @@
-
-
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from dijkstra_search import DijkstraSearch
 from scipy.spatial import cKDTree, Voronoi
 import cv2
+
+from dijkstra_search import DijkstraSearch
 
 
 class VoronoiRoadMapPlanner:
@@ -123,8 +122,6 @@ class VoronoiRoadMapPlanner:
         sample_y.append(gy)
 
         return sample_x, sample_y
-    
-
 
 def get_path(img,show_animation,start,goal):
     """

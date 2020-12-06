@@ -4,6 +4,9 @@ import numpy as np
 from threading import Timer
 
 class RepeatedTimer(object):
+    """
+        This class handles Threading initialization, running and stopping
+    """
     def __init__(self, interval, function, *args, **kwargs):
         self._timer     = None
         self.interval   = interval
@@ -30,15 +33,16 @@ class RepeatedTimer(object):
 
 
 class Robot():
+    """
+        This class handles the Thymio instantiation, its state representation, and the different actions it can perform
+    """
     def __init__(self, th):
         self.curr_pos = [0,0,0]
         self.wheeltowheel_length = 95 #mm
         self.speed = 100 #Thymio speed
         self.speed_to_mm_s = 0.31573 #multiply with Thymio speed to get mm/s
-        #self.speed_to_deg_s = 0.38558 #multiply with Thymio speed to get deg/s
         self.speed_to_deg_s = math.degrees(2*self.speed_to_mm_s/self.wheeltowheel_length)
         self.th = th
-        #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
         
         self.flag_local = False
@@ -111,10 +115,7 @@ class Robot():
         self.turn(turn_angle)
         self.go_straight(distance)
 
-        #update position and angle of the robot
-        #self.curr_pos = [target_pos[0],target_pos[1],path_angle]
-
-    def go_straight(self, distance, verbose=True):
+    def go_straight(self, distance, verbose=False):
         """
         Move the robot to a given distance in mm
         Parameters: 
@@ -131,7 +132,6 @@ class Robot():
         elif distance < 0: #go backwards
             self.move(l_speed=-self.speed, r_speed=-self.speed)
 
-        #time.sleep(target_time)
         self.time_move(target_time)
 
         t_end = time.time()
@@ -139,6 +139,11 @@ class Robot():
         if verbose:print("go_straight_took:{} s".format(t_end-t_0), "\n")
         
     def time_move(self, target_time):
+        """
+        timer to wait a target_time while we check if the robot has detected a wall
+        Parameters: 
+            target_time (int) : time to wait to reach a coord (s)
+        """
         t=0
         while t <= target_time:
 
@@ -151,12 +156,16 @@ class Robot():
                     continue
                     
 
-    def turn(self, turn_angle):
-        print("turn_angle:{}".format(turn_angle))
+    def turn(self, turn_angle, verbose=False):
+        """
+        Move the robot to a certain angle
+        Parameters: 
+            turn_angle (int) : desired angle (degree)
+            verbose: whether to print status messages or not
+        """
+        if verbose: print("turn_angle:{}".format(turn_angle))
 
         target_time = abs(turn_angle)/ (self.speed * self.speed_to_deg_s) #linear fit model from degrees to s for v=100 (change to Kalman)
-
-        #print("target_turn:{} s".format(target_time))
 
         t_0 = time.time()
 
@@ -168,13 +177,19 @@ class Robot():
             return False
 
         time.sleep(target_time)
-        #self.time_move(target_time)
         t_end = time.time()
 
-        print("actual_turn_took:{} s".format(t_end-t_0), "\n")
+        if verbose: print("actual_turn_took:{} s".format(t_end-t_0), "\n")
 
 
     def move(self, l_speed=100, r_speed=100, verbose=False):
+        """
+        turn the wheel of the robot according the value of the speed of the wheels
+        Parameters: 
+            l_speed (int) : speed of the left wheel
+            r_speed (int) : speed of the right wheel
+            verbose: whether to print status messages or not
+        """
         # Printing the speeds if requested
         if verbose: print("\t\t Setting speed : ", l_speed, r_speed)
         # Changing negative values to the expected ones with the bitwise complement
@@ -188,10 +203,22 @@ class Robot():
         self.th.set_var("motor.right.target", r_speed)
 
     def stop(self):
+        """
+        Stop the robot
+        """
         self.move(l_speed=0, r_speed=0)
 
 
     def test_saw_wall(self, thread=True, wall_threshold=500, verbose=False):
+        """
+        Check if the proximity horizontal sensors return a value according wall_threshold, meaning there is a wall
+        Parameters: 
+            thread (bool) : to know if we are using this method calling from a thread or no
+            wall_threshold: threshold starting which it is considered that the sensor saw an obstacle
+            verbose (bool): whether to print status messages or not
+        Return:
+            a boolean if the robot saw an obstacle or not
+        """
         if any([x>wall_threshold for x in self.th['prox.horizontal'][:-2]]):
             if verbose: print("\t\t Saw a wall")
             if thread:
@@ -208,11 +235,11 @@ class Robot():
 
     def wall_following(self, motor_speed=100, wall_threshold=500, verbose=True):
         """
-        Wall following behaviour of the FSM
-        param motor_speed: the Thymio's motor speed
-        param wall_threshold: threshold starting which it is considered that the sensor saw a wall
-        param white_threshold: threshold starting which it is considered that the ground sensor saw white
-        param verbose: whether to print status messages or not
+        Follow the obstacle until the robot no longer sees it. Avoid the obstacle clockwise.
+        Parameters: 
+            motor_speed (int) : the Thymio's motor speed
+            wall_threshold (int) : threshold starting which it is considered that the sensor saw an obstacle
+            verbose (bool) : whether to print status messages or not
         """
 
         if verbose: print("Starting wall following behaviour")
@@ -227,7 +254,7 @@ class Robot():
             if saw_wall:
                 if prev_state=="forward":
                     if verbose: print("Saw wall move right")
-                    self.move(l_speed=100, r_speed=-100, verbose=False) #turn 90 right
+                    self.move(l_speed=100, r_speed=-100, verbose=False) #turn right
                     time.sleep(0.1)
                     prev_state="turning"
                     count=0
@@ -238,12 +265,12 @@ class Robot():
                     time.sleep(0.5)
                     prev_state="forward"
                 else:
-                    self.move(l_speed=-100, r_speed=100, verbose=False)#turn 90 left
+                    self.move(l_speed=-100, r_speed=100, verbose=False)#turn left
                     time.sleep(0.15)
                     if verbose: print("Moving left")
                     prev_state="turning"
-                count +=1
+                count +=1 #count the number of time the robot no longer sees an obstacle
                 if verbose: print("count: {}".format(count))
-            if count >= 15:
+            if count >= 15: 
                 found_path = True
                 self.stop()

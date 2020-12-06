@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Nov 26 20:16:25 2020
-
-@author: Celinna
-
 Purpose: Test if video camera is working
 Can also be used to save a static image from the video
 """

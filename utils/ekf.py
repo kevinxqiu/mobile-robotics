@@ -1,45 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 25 22:35:07 2020
 
-@author: kevin
-"""
 import os
 import sys
 import math
-
-sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
-
-import get_video
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 
+sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
 
-# Covariance for EKF simulation
-Q = np.diag([
-    0.0001,  # variance of location on x-axis
-    0.0001,  # variance of location on y-axis
-    np.deg2rad(0.0001),  # variance of yaw angle
-    3.45831 ** 2,  # variance of velocity mm^2/s^2
-    0.0402859 ** 2 # variance of angular velocity rad^2/s^2(yaw rate)
-    ]) ** 2  # predict state covariance
-R = np.diag([
-    0.0001,
-    0.0001,
-    np.deg2rad(0.0001),
-    0.0001,
-    0.0001
-    ]) ** 2  # Observation x,y, theta position and v,w covariance
-
-#  Simulation parameter
-#INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
-#GPS_NOISE = np.diag([0.0001, 0.0001, 0.0001]) ** 2
-
-DT = 0.1 # time tick [s]
-SIM_TIME = 15  # simulation time [s]
-
-show_animation = True
+import get_video
 
 def calc_input(leftv, rightv):
     L = 95 #wheelbase length in mm
@@ -188,61 +158,28 @@ def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
     py = np.array(fx[1, :] + xEst[1, 0]).flatten()
     plt.plot(px, py, "--r")
 
+# Covariance for EKF simulation
+Q = np.diag([
+    0.0001,  # variance of location on x-axis
+    0.0001,  # variance of location on y-axis
+    np.deg2rad(0.0001),  # variance of yaw angle
+    3.45831 ** 2,  # variance of velocity mm^2/s^2
+    0.0402859 ** 2 # variance of angular velocity rad^2/s^2(yaw rate)
+    ]) ** 2  # predict state covariance
+R = np.diag([
+    0.0001,
+    0.0001,
+    np.deg2rad(0.0001),
+    0.0001,
+    0.0001
+    ]) ** 2  # Observation x,y, theta position and v,w covariance
 
-"""def main():
-    print(__file__ + " start!!")
+#  Simulation parameter
+#INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
+#GPS_NOISE = np.diag([0.0001, 0.0001, 0.0001]) ** 2
 
-    time = 0.0
+DT = 0.1 # time tick [s]
+SIM_TIME = 15  # simulation time [s]
 
-    # State Vector [x y yaw v]'
-    xEst = np.zeros((4, 1))
-    xTrue = np.zeros((4, 1))
-    PEst = np.eye(4)
+show_animation = True
 
-    xDR = np.zeros((4, 1))  # Dead reckoning
-
-    # history
-    hxEst = xEst
-    hxTrue = xTrue
-    hxDR = xTrue
-    hz = np.zeros((2, 1))
-
-    while SIM_TIME >= time:
-        time += DT
-        u = calc_input(leftv, rightv) #ADD MOTOR ODOMETRY
-
-        xTrue, z, xDR, ud = observation(xTrue, xDR, u)
-
-        xEst, PEst = ekf_estimation(xEst, PEst, z, ud)
-
-        # store data history
-        hxEst = np.hstack((hxEst, xEst))
-        hxDR = np.hstack((hxDR, xDR))
-        hxTrue = np.hstack((hxTrue, xTrue))
-        hz = np.hstack((hz, z))
-
-        if show_animation:
-            plt.cla()
-            # for stopping simulation with the esc key.
-            plt.gcf().canvas.mpl_connect('key_release_event',
-                    lambda event: [exit(0) if event.key == 'escape' else None])
-            plt.plot(hz[0, :], hz[1, :], ".g")
-            plt.plot(hxTrue[0, :].flatten(),
-                     hxTrue[1, :].flatten(), "-b")
-            #plt.plot(hxDR[0, :].flatten(),
-            #         hxDR[1, :].flatten(), "-k")
-            plt.plot(hxEst[0, :].flatten(),
-                     hxEst[1, :].flatten(), "-r")
-            #plot_covariance_ellipse(xEst, PEst)
-            #plt.axis("equal")
-            plt.grid(True)
-            plt.xlim(0, 0.2)
-            plt.ylim(-0.05,0.05)
-
-            plt.xlabel('x')
-            plt.ylabel('y')
-            plt.pause(0.001)"""
-
-
-#if __name__ == '__main__':
-#    main()

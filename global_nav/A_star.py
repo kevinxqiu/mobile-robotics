@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 17 15:00:20 2020
-
 Retrived from Basics of Mobile Robotics EPFL
 """
 
@@ -208,6 +206,7 @@ def A_Star(start, goal, h, coords, occupancy_grid, max_val, movement_type="4N"):
 #  MAIN
 # --------------------------------------------------------------------------------------------
 # Define the start and end goal
+
 start = (3,0)
 goal = (2,0)
 

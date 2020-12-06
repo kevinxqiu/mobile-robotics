@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Nov 29 16:19:51 2020
-
-@author: Celinna
-
 NOTE:
 The functions order_point and four_point_transform were retrieved from: 
 https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
 
 author: Adrian Rosebrock
-
 
 """
 import numpy as np
@@ -42,7 +37,6 @@ def order_points(pts):
     rect[3] = pts[np.argmax(diff)]
     # return the ordered coordinates
     return rect
-
 
 def four_point_transform(image, pts):
     """
@@ -84,8 +78,6 @@ def four_point_transform(image, pts):
     warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
     # return the warped image
     return warped
-
-
 
 def get_corners(img):
     """
