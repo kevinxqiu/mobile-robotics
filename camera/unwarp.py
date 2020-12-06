@@ -126,10 +126,7 @@ def get_corners(img):
             img2[labels == i + 1] = 255
     
     res = img2
-    #res = cv2.bitwise_not(img2)
-    #invert = cv2.bitwise_not(image)
-    
-    
+
     # get largest contour
     contours = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = contours[0] if len(contours) == 2 else contours[1]
@@ -162,13 +159,14 @@ def get_corners(img):
         # draw rotated rectangle on copy of img
         rot_bbox = img.copy()
         cv2.drawContours(rot_bbox,[box],0,(0,0,255),2)
-    save = False
     
+    save = True
     if save:
         # write img with red rotated bounding box to disk
-        cv2.imwrite("rectangle_thresh.png", thresh)
-        cv2.imwrite("rectangle_outline.png", rect)
-        cv2.imwrite("rectangle_bounds.png", rot_bbox)
+        cv2.imwrite("rectangle_thresh.jpg", thresh)
+        cv2.imwrite("rectangle_res.jpg", res)
+        cv2.imwrite("rectangle_rect.jpg", rect)
+        # cv2.imwrite("rectangle_bounds.png", rot_bbox)
     
     show = False
     if show:
@@ -176,11 +174,13 @@ def get_corners(img):
         cv2.imshow('remove spots',res)
         cv2.imshow("IMAGE", img)
         #cv2.imshow("THRESHOLD", thresh)
-        #cv2.imshow("MORPH", morph)
-        #cv2.imshow("VERT", vert)
-        #cv2.imshow("HORIZ", horiz)
         cv2.imshow("RECT", rect)
-        #cv2.imshow("BBOX", rot_bbox)
+        cv2.imshow("BBOX", rot_bbox)
         cv2.waitKey(0)
     
     return approx
+
+
+# img = cv2.imread('raw_map.jpg')
+# approx = get_corners(img)
+    
