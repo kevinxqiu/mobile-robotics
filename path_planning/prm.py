@@ -251,34 +251,14 @@ def main():
     # start and goal position
     sx = 60.0/scale  # [m]
     sy = 300.0/scale  # [m]
-    gx = 550.0/scale  # [m]
-    gy = 80.0/scale  # [m]
+    gx = 520.0/scale  # [m]
+    gy = 50.0/scale  # [m]
     robot_size = 25.0/scale  # [m]
 
     #ox = []
     #oy = []
     #ox, oy = create_map('map.jpg')
     #print(ox)
-    """
-    for i in range(60):
-        ox.append(i)
-        oy.append(0.0)
-    for i in range(60):
-        ox.append(60.0)
-        oy.append(i)
-    for i in range(61):
-        ox.append(i)
-        oy.append(60.0)
-    for i in range(61):
-        ox.append(0.0)
-        oy.append(i)
-    for i in range(40):
-        ox.append(20.0)
-        oy.append(i)
-    for i in range(40):
-        ox.append(40.0)
-        oy.append(60.0 - i)
-    """
 
     if show_animation:
         plt.plot(ox, oy, ".k", markersize=scale)
@@ -293,8 +273,8 @@ def main():
 
     if show_animation:
         plt.plot(rx, ry, "-r")
-    #    plt.pause(0.001)
-    #    plt.show()
+        plt.pause(0.001)
+        plt.show()
 
 
 if __name__ == '__main__':

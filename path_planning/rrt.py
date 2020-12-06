@@ -11,6 +11,8 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
+from path_planning.create_map import create_map
+
 show_animation = True
 
 
@@ -158,7 +160,7 @@ class RRT:
         for node in self.node_list:
             if node.parent:
                 plt.plot(node.path_x, node.path_y, "-g")
-                plt.axis([-20, 50, -2, 50])
+                #plt.axis([-20, 50, -2, 50])
         for (ox, oy) in self.obstacle_list:
             self.plot_circle(ox, oy)
         
@@ -210,9 +212,8 @@ class RRT:
         return d, theta
 
 
-def main(gx=30.0, gy=10.0):
+def main():
     print("start " + __file__)
-
     # ====Search Path with RRT====
     #obstacleList = [(5, 5), (3, 6), (3, 8), (3, 10), (7, 5),
     #                (9, 5), (8, 10)]  # [x, y, radius]
@@ -221,12 +222,19 @@ def main(gx=30.0, gy=10.0):
     img = cv2.flip(img, 0)
     ox, oy, scale = create_map(img)
     
+    
+    sx = 60.0/scale  # [m]
+    sy = 300.0/scale
+    gx = 520.0/scale
+    gy = 50.0/scale
+
+    
     obstacleList = list(zip(ox, oy))
     # Set Initial parameters
     rrt = RRT(
-        start=[2, 2],
+        start=[sx, sy],
         goal=[gx, gy],
-        rand_area=[-2, 40],
+        rand_area=[-2, gx],
         obstacle_list=obstacleList)
     path = rrt.planning(animation=show_animation)
 

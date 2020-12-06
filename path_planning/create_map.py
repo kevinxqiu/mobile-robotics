@@ -12,14 +12,14 @@ from skimage.transform import resize
 #fig, ax = plt.subplots(1,2)
 def create_map(image):
     threshold = 0.35
-    scale = 1    
+    scale = 10
     #image = plt.imread(image_dir)
     
     
     height, width, channel = image.shape
     
     
-    image = resize(image, (height/scale, width/scale))
+    image = resize(image, (int(height/scale), int(width/scale)))
     height, width, channel = image.shape
 
     #print(height, width)
@@ -46,4 +46,4 @@ def create_map(image):
     #print(bwimage)
     #print(len(ox))
     return ox, oy, scale
-#create_map('map.jpg')
+#create_map('map1.jpg')
