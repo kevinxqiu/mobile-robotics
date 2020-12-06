@@ -71,7 +71,10 @@ def filter_position(verbose=True):
     plt.xlabel('x')
     plt.ylabel('y')
 
-def main():
+'''
+MAIN
+'''
+if __name__ == "__main__":
     '''
     START VIDEO
     '''
@@ -160,6 +163,3 @@ def main():
     cap.release()
     out.release()
     cv2.destroyAllWindows()
-
-if __name__ == "__main__":  
-    main()
