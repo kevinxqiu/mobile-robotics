@@ -32,12 +32,12 @@ def video_cam():
 
 def filter_position(verbose=True):
     global xEst, xTrue, PEst, hxEst, hxTrue, hz
-    
+
     # Get frame from video and convert to grayscale image
     ret, frame = cap.read()
     warped = unwarp.four_point_transform(frame, pts)
     gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY) #converts color image to gray space
-    
+
     #measure speed from thymio
     curr_speed = my_th.get_speed()
     left, right = curr_speed[0], curr_speed[1]
@@ -98,10 +98,10 @@ if __name__ == "__main__":
     # start and goal position
     # Map size is 1188 x 840
     start = np.array([pos[0], pos[1]]).astype(int)
-    
+
     template = cv2.imread('template.jpg',0)
     end, _ = get_video.match_template(warped,template,False)
-    
+
     # end = np.array([1020, 200]).astype(int)
 
     # Read saved map image
@@ -121,9 +121,9 @@ if __name__ == "__main__":
     my_th.set_speed(100)
 
     # To make sure the Thymio has had time to connect
-    time.sleep(3) 
+    time.sleep(3)
     variables = th.variable_description()
-    print(variables[0]) 
+    print(variables[0])
 
     '''
     INITIALIZE VARIABLES
@@ -138,11 +138,11 @@ if __name__ == "__main__":
     hxEst = xEst
     hxTrue = xTrue
     hz = np.zeros((5, 1))
-    
+
     '''
     START MULTI-THREADING FOR MOTION FILTERING AND VIDEO CAPTURE
     '''
-    rt_motion = RepeatedTimer(0.1, ekf.filter_position)
+    rt_motion = RepeatedTimer(0.1, filter_position)
     rt_cam = RepeatedTimer(0.1, video_cam)
 
     '''
@@ -150,9 +150,9 @@ if __name__ == "__main__":
     '''
     for point in path:
         if my_th.flag_skip > 0:
-            my_th.flag_skip -= 1               
+            my_th.flag_skip -= 1
             continue
-        my_th.move_to_target([point[0],point[1]]) 
+        my_th.move_to_target([point[0],point[1]])
         print(' position:', my_th.get_position())
 
 
