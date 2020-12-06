@@ -66,15 +66,17 @@ def jacob_f(x, u):
     """
     Jacobian of Motion Model
     motion model
-    x_{t+1} = x_t+v*dt*cos(yaw)
-    y_{t+1} = y_t+v*dt*sin(yaw)
-    yaw_{t+1} = yaw_t+omega*dt
-    v_{t+1} = v{t}
+    x{t+1} = x_t+v{t}*dt*cos(yaw{t})
+    y{t+1} = y_t+v{t}*dt*sin(yaw{t})
+    yaw{t+1} = yaw{t}+omega{t}*dt
+    v{t+1} = v{t}
+    omega{t+1} = omega{t}
     so
-    dx/dyaw = -v*dt*sin(yaw)
-    dx/dv = dt*cos(yaw)
-    dy/dyaw = v*dt*cos(yaw)
-    dy/dv = dt*sin(yaw)
+    dx/dyaw = -v{t}*dt*sin(yaw{t})
+    dx/dv = dt*cos(yaw{t})
+    dy/dyaw = v*dt*cos(yaw{t})
+    dy/dv = dt*sin(yaw{t})
+    dyaw/domega = dt
     """
     yaw = x[2, 0]
     v = u[0, 0]
@@ -104,18 +106,10 @@ def jacob_h():
 
 def observation(xTrue, u, img, pixel2mmx, pixel2mmy):
     xTrue = motion_model(xTrue, u)
-
-    # add noise to gps x-y
     #measure camera
     camera_pos = get_video.detect_thymio(img,pixel2mmx,pixel2mmy)
     z = observation_model(camera_pos)
-
-    # add noise to input
-    #ud = u #+ INPUT_NOISE @ np.random.randn(2, 1)
-
-    #xDR = motion_model(xDR, ud)
-
-    return z, xTrue#, xDR, ud
+    return z, xTrue
 
 
 def ekf_estimation(xEst, PEst, z, u):
@@ -160,19 +154,19 @@ def plot_covariance_ellipse(xEst, PEst):  # pragma: no cover
 
 # Covariance for EKF simulation
 Q = np.diag([
-    0.0001,  # variance of location on x-axis
-    0.0001,  # variance of location on y-axis
-    np.deg2rad(0.0001),  # variance of yaw angle
-    3.45831 ** 2,  # variance of velocity mm^2/s^2
-    0.0402859 ** 2 # variance of angular velocity rad^2/s^2(yaw rate)
-    ]) ** 2  # predict state covariance
+    10 ** 2,  # process variance of location on x-axis - mm^2
+    10 ** 2,  # process variance of location on y-axis - mm^2
+    0.17454 ** 2, # (10 degrees) process variance of yaw angle rad^2
+    2.44539 ** 2,  # process variance of velocity mm^2/s^2
+    0.00114760 ** 2 # process variance of angular velocity rad^2/s^2(yaw rate)
+    ])  # predict state covariance
 R = np.diag([
-    0.0001,
-    0.0001,
-    np.deg2rad(0.0001),
-    0.0001,
-    0.0001
-    ]) ** 2  # Observation x,y, theta position and v,w covariance
+    2 ** 2,  # measurement variance of location on x-axis - mm^2
+    2 ** 2,  # measurement variance of location on y-axis - mm^2
+    0.0436 ** 2, # (2.5 degrees) measurement variance of yaw angle rad^2
+    2.44539 ** 2,  # measurement variance of velocity mm^2/s^2
+    0.00114760 ** 2 # measurement variance of angular velocity rad^2/s^2(yaw rate)
+    ])  # Observation x,y, theta position and v,w covariance
 
 #  Simulation parameter
 #INPUT_NOISE = np.diag([0.0001, np.deg2rad(0.0001)]) ** 2
@@ -182,4 +176,3 @@ DT = 0.1 # time tick [s]
 SIM_TIME = 15  # simulation time [s]
 
 show_animation = True
-
