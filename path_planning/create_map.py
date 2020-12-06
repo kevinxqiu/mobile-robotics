@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 10 23:22:05 2020
-
-@author: kevin
-"""
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage.color import rgb2gray

@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Nov 19 16:50:51 2020
-
-@author: kevin
-"""
-
 import math
 import random
 import cv2
