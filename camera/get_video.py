@@ -83,7 +83,52 @@ def init_video(img, save_img):
         cv2.imshow("Warped", warped)
         cv2.imwrite('map.jpg',warped)
 
-    return gray, pts, pixel2mmx, pixel2mmy
+    return warped, gray, pts, pixel2mmx, pixel2mmy
 
 
+def match_template(img,template,plot):
+    """
+    Find the goal location based on template matching. Code retrieved from
+    https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_template_matching/py_template_matching.html
+    Parameters:
+        image (color img): source image 
+        plot (boolean): whether to plot rectangle over detected template
+    Returns:
+        goal (np.arra): [x,y] coordinates of goal
+    """
+    img_orig = img
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    w, h = template.shape[::-1]
 
+    # All the 6 methods for comparison in a list
+    # methods = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED', 'cv2.TM_CCORR',
+    #             'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
+    meth = 'cv2.TM_SQDIFF_NORMED'
+    
+    method = eval(meth)
+    # Apply template Matching
+    res = cv2.matchTemplate(img,template,method)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    
+    # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+    if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+        top_left = min_loc
+    else:
+        top_left = max_loc
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+    
+    goal = np.array([(bottom_right[0]+top_left[0])/2,(bottom_right[1]+top_left[1])/2]).astype(int)
+    # flip y-axis of goal to match existing coordinate system
+    X,Y = img.shape
+    goal[1] = X - goal[1]
+
+    if plot:
+        cv2.rectangle(img_orig,top_left, bottom_right, (0,255,0), 2) # Identify goal
+    
+    return goal, img_orig
+
+
+# img = cv2.imread('get_goal.jpg')
+# template = cv2.imread('template.jpg',0)
+# goal = match_template(img,template,True)

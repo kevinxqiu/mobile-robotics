@@ -23,12 +23,13 @@ sys.path.insert(0, os.path.join(os.getcwd(), 'camera'))
 sys.path.insert(0, os.path.join(os.getcwd(), 'global_nav'))
 
 import voronoi_road_map
+import get_video
 
 # Get path
 # Read saved map image
 img = 'map2.jpg'
 gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-#gray = cv2.flip(gray, 0)
+template = cv2.imread('template.jpg',cv2.IMREAD_GRAYSCALE)
 
 start = np.array([130, 680]).astype(int)
 end = np.array([1020, 200]).astype(int)
@@ -48,11 +49,12 @@ for point in path:
 r,c = path.shape
 
 # Read image
-cap = cv2.VideoCapture('kidnapping.avi')
+cap = cv2.VideoCapture('double_local_avoidance.avi')
 
 # Save new image 
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('kidnapping_with_path.avi', fourcc, 20.0, (int(cap.get(3)),int(cap.get(4))))
+out = cv2.VideoWriter('double_local_avoidance_with_path1.avi', fourcc, 20.0, (int(cap.get(3)),int(cap.get(4))))
+
 
 
 while(True):
@@ -62,14 +64,18 @@ while(True):
     
     if ret == True:
         new = frame.copy()
-        #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        
         for i in range(0,r-1):    
             cv2.line(new, (path[i,0], path[i,1]), (path[i+1,0], path[i+1,1]), (0, 0, 255), thickness=line_thickness)
+            
+        goal, new = get_video.match_template(new,template,True)
         
+        # Image sharpening
         kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
         new = cv2.filter2D(new, -1, kernel)
         
         cv2.imshow('frame',new)
+        
         out.write(new)
     
     else:

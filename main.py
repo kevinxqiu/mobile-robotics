@@ -82,7 +82,7 @@ if __name__ == "__main__":
     ret, frame = cap.read()
 
     save_img = False # Change to true if you want to save an image of the map
-    gray, pts, pixel2mmx, pixel2mmy = get_video.init_video(frame, save_img)
+    warped, gray, pts, pixel2mmx, pixel2mmy = get_video.init_video(frame, save_img)
 
     # Get initial position and angle of thymio
     pos = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
@@ -98,7 +98,11 @@ if __name__ == "__main__":
     # start and goal position
     # Map size is 1188 x 840
     start = np.array([pos[0], pos[1]]).astype(int)
-    end = np.array([1020, 200]).astype(int)
+    
+    template = cv2.imread('template.jpg',0)
+    end, _ = get_video.match_template(warped,template,False)
+    
+    # end = np.array([1020, 200]).astype(int)
 
     # Read saved map image
     img = 'map2.jpg'
