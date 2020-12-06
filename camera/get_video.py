@@ -90,6 +90,5 @@ def init_video(img, save_img):
 
     return gray, pts, pixel2mmx, pixel2mmy
 
-    #kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
-    #img = cv2.filter2D(warped, -1, kernel)
+
 
