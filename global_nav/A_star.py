@@ -2,7 +2,7 @@
 """
 Created on Tue Nov 17 15:00:20 2020
 
-@author: Celinna
+Retrived from Basics of Mobile Robotics EPFL
 """
 
 import math

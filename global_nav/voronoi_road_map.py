@@ -1,12 +1,4 @@
-"""
 
-Voronoi Road Map Planner
-
-author: Atsushi Sakai (@Atsushi_twi)
-
-author: Celinna Ju 
-
-"""
 
 import math
 import numpy as np
@@ -16,9 +8,12 @@ from scipy.spatial import cKDTree, Voronoi
 import cv2
 
 
-
 class VoronoiRoadMapPlanner:
-
+    """
+    Voronoi Road Map Planner
+    
+    author: Atsushi Sakai (@Atsushi_twi)
+    """
     def __init__(self):
         # parameter
         self.N_KNN = 10.0  # number of edge from one sampled point
@@ -132,17 +127,27 @@ class VoronoiRoadMapPlanner:
 
 
 def get_path(img,show_animation,start,goal):
-    print(__file__ + " start!!")
+    """
+    Order the 4 points of an object in correct order
+    Parameters:
+        img(image): grayscale source image
+        show_animation(boolean): determines whether to plot the Voronoi trajectory
+        start(int np.array): start position [x,y]
+        goal(int np.array): goal position [x,y]
+    Returns:
+        path(int np.array): voronoi path coordinates in [x,y] of robot 
+                            to get from start to goal 
+    """
+    
+    print("Voronoi path planning is starting...")
 
     robot_size = 100  # [mm]
-    factor = 15
+    factor = 15 # Scaling factor
 
     # Convert start and end positions based on new factor size
     start = np.array(start)/factor
     goal = np.array(goal)/factor
     robot_size = robot_size/factor
-    
-    #print(start)
     
     row, col = img.shape[:2]
     bordersize = 5
@@ -162,9 +167,6 @@ def get_path(img,show_animation,start,goal):
     
     pixel2mmx = 840 / X
     pixel2mmy = 1188 / Y
-    # pixel2mmx = 2.56
-    # pixel2mmy = 2.14
-
 
     new_img = cv2.resize(border,(int(pixel2mmy*Y/factor), int(pixel2mmx*X/factor))) 
     

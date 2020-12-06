@@ -9,45 +9,34 @@ import numpy as np
 import cv2
 import cv2.aruco as aruco
 import unwarp
-from get_corners import get_corners
 import math
 
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
-
-#newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
-
-h = 480
-w = 640
-
 def detect_thymio(img,pixel2mmx,pixel2mmy):
     """
-    Parameters
-    ----------
-    frame : IMAGE
-        Source image
-    pixel2mmx : INT
-        Pixel scaling factor for x direction
-    pixel2mmy : INT
-        Pixel scaling factor for y direction
-
-    Returns
-    -------
-    pos : INT 
-        Current (x,y) position with shape (1,2)
-    vec : TYPE
-        Returns none
-
+    Detect the location and angle of the Thymio robot using Aruco markers
+    Parameters:
+        image (grayscale img): source image
+        pixel2mmx (float): pixel to millimeter for x direction
+        pixel2mmy (float): pixel to millimeter for y direction
+    Returns:
+        newPos (5x1 np.array): [x; y; angle (rad); 0; 0] corresponding to 
+                current position of thymio
     """
-    # Detect aruco markers
     
-    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #converts color image to gray space
+    # Detect aruco markers
     corners, ids, rejectedImgPoints = aruco.detectMarkers(img, aruco_dict)
     corners = np.array(corners)
     
     Y,X = img.shape
+    
+    # initialize position
+    newPos = np.zeros((5,1))
+    
     # Plot identified markers, if any
     if ids is not None:
+        # Draw location of aruco markers
         frame_markers = aruco.drawDetectedMarkers(img, corners, ids,borderColor = (0,0,255)) # convert back to RGBA
        
         #colorArr = cv2.cvtColor(color_rgb.copy(),cv2.COLOR_RGB2RGBA) # Converts images back to RGBA 
@@ -64,75 +53,43 @@ def detect_thymio(img,pixel2mmx,pixel2mmy):
         vec = (c[1,:] + c[0,:])/2 - (c[2,:] + c[3,:])/2  # Find orientation vector of chair
         vec = vec/ np.linalg.norm(vec) # Convert to unit vector
         ang = math.atan2(vec[0], vec[1])
-       
-        #print(ang)
-        #arrow_endpos = (int(pos[0]+vec[0]*100),int(pos[1]+vec[1]*100))
-        #cv2.arrowedLine(frame,tuple(pos),arrow_endpos,(255,0,0),(2),8,0,0.1) # Draw chair vector on img
-    else:
-        pos = []
-        ang = []
-    
-    return pos, ang
-
-
-# Pixel to mmm ratio -- must double check
-
-
-#=============================================================================================================================================================================================='
-#   MAIN LOOP
-#=============================================================================================================================================================================================='
-
-# cap = cv2.VideoCapture(1) # might not be 1, depending on computer
-
-def init_video(cap, save_img):
-    # First we get the warped image
-    ret, frame = cap.read()
-    pts = get_corners(frame) # will be used to unwarp all images from live feed
-    #print(pts)
-    
-    if save_img:
-        warped = unwarp.four_point_transform(frame, pts)
-        # show and save the warped image
-        cv2.imshow("Warped", warped)
-        cv2.imwrite('warped-img.jpg',warped)
-    
-    return cap, pts
-
-
-
-def get_video(img):
-    # initialize position
-    newPos = np.zeros((5,1))
-
-    # Map size is 1188 x 840
-    X,Y = img.shape # X and Y are flipped here
-    
-    pixel2mmx = 840 / X
-    pixel2mmy = 1188 / Y
-    # pixel2mmx = 2.56
-    # pixel2mmy = 2.14
-
-    
-    # Detect Thymio location
-    pos, ang = detect_thymio(img,pixel2mmx,pixel2mmy)
-    
-    if pos != []:
+        
         newPos[0] = pos[0]
         newPos[1] = pos[1]
         newPos[2] = ang
-    
-    #print(newPos)
-    #cv2.imwrite('sample-map.jpg',frame)
-    #break
-    
-    #warped = cv2.resize(warped,(2*w, 2*h))
-    
-    #kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
-    #img = cv2.filter2D(warped, -1, kernel)
 
     return newPos
 
 
-# When everything done, release the capture
-# cap.release()
-# cv2.destroyAllWindows()
+def init_video(img, save_img):
+    """
+    Find the intial points of the map. Save the map image if needed. 
+    Parameters:
+        image (color img): source image 
+        save_img (boolean): whether to save the image as .jpg
+    Returns:
+        gray (grayscale img): warped image
+        pts (np.array): [x,y] coordinates of corners of unwarped image
+        pixel2mmx (float): pixel to millimeter for x direction
+        pixel2mmy (float): pixel to millimeter for y direction
+    """
+    pts = unwarp.get_corners(img) # will be used to unwarp all images from live feed
+    
+    warped = unwarp.four_point_transform(img, pts)
+    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+    
+    # Map size is 1188 x 840
+    X,Y = gray.shape # X and Y are flipped here
+    pixel2mmx = 840 / X
+    pixel2mmy = 1188 / Y
+    
+    if save_img:
+        # show and save the warped image
+        cv2.imshow("Warped", warped)
+        cv2.imwrite('map.jpg',warped)
+
+    return gray, pts, pixel2mmx, pixel2mmy
+
+    #kernel = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
+    #img = cv2.filter2D(warped, -1, kernel)
+

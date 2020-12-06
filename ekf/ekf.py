@@ -132,12 +132,12 @@ def jacob_h():
     return jH
 
 
-def observation(xTrue, u, warped):
+def observation(xTrue, u, img, pixel2mmx, pixel2mmy):
     xTrue = motion_model(xTrue, u)
 
     # add noise to gps x-y
     #measure camera
-    camera_pos = get_video.get_video(warped)
+    camera_pos = get_video.detect_thymio(img,pixel2mmx,pixel2mmy)
     z = observation_model(camera_pos)
 
     # add noise to input

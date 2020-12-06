@@ -15,7 +15,6 @@ sys.path.insert(0, os.path.join(os.getcwd(), 'global_nav'))
 
 #print(os.getcwd())
 import unwarp
-from get_corners import get_corners
 import get_video
 from Thymio import Thymio
 from motion import Robot
@@ -30,32 +29,20 @@ import voronoi_road_map
 START VIDEO
 '''
 cap = cv2.VideoCapture(1) # might not be 1, depending on computer
-
 ret, frame = cap.read()
-pts = get_corners(frame) # will be used to unwarp all images from live feed
-#print(pts)
-warped = unwarp.four_point_transform(frame, pts)
-gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 
-# Map size is 1188 x 840
-X,Y = gray.shape # X and Y are flipped here
-pixel2mmx = 840 / X
-pixel2mmy = 1188 / Y
+save_img = False # Change to true if you want to save an image of the map
+gray, pts, pixel2mmx, pixel2mmy = get_video.init_video(frame, save_img)
 
-pos, ang = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
-
-# Change to true if you want to save an image of the map
-save_img = False
-if save_img:
-    # show and save the warped image
-    #cv2.imshow("Map1", warped)
-    cv2.imwrite('map2.jpg',warped)
-
-
+# Get initial position and angle of thymio
+pos = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
 
 # Start video capture saving
+X,Y = gray.shape
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter('output_vid.avi', fourcc, 20.0, (Y,X))
+
+
 
 '''
 RUN PATH PLANNING
@@ -65,11 +52,13 @@ RUN PATH PLANNING
 start = np.array([pos[0], pos[1]]).astype(int)
 end = np.array([1020, 200]).astype(int)
 
+# Read saved map image
 img = 'map2.jpg'
 gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
 
-show_animation = True
+show_animation = True # Shows voronoi path planning process
 path  = voronoi_road_map.get_path(gray,show_animation,start,end)
+
 
 
 '''
@@ -78,7 +67,7 @@ INITIALIZE THYMIO
 #/dev/cu.usbmodem141101	/dev/cu.usbmodem141401
 th = Thymio.serial(port='COM5', refreshing_rate=0.1) #/dev/ttyACM0 for linux
 my_th = Robot(th)
-my_th.set_position([start[0],start[1],np.rad2deg(ang)])
+my_th.set_position([start[0],start[1],np.rad2deg(pos[2])])
 
 time.sleep(3) # To make sure the Thymio has had time to connect
 
@@ -100,17 +89,13 @@ hxTrue = xTrue
 #hxDR = xTrue
 hz = np.zeros((5, 1))
 
+
 def video_cam():
+    """
+    Continuously display and save the video feed from the camera
+    """
     ret, frame = cap.read()
     warped = unwarp.four_point_transform(frame, pts)
-    #corners, ids, rejectedImgPoints = aruco.detectMarkers(warped, aruco_dict)
-    #corners = np.array(corners)
-    
-    #Y,X = img.shape
-    # Plot identified markers, if any
-    #if ids is not None:
-    #    frame_markers = aruco.drawDetectedMarkers(img, corners, ids,borderColor = (0,0,255))
-    
     cv2.imshow('Image',warped)
     out.write(warped)
     cv2.waitKey()
@@ -122,10 +107,9 @@ def repeated_function():
     #xDR,
     #hxDR,
     
+    # Get frame from video and convert to grayscale image
     ret, frame = cap.read()
     warped = unwarp.four_point_transform(frame, pts)
-    # Print original live video feed
-
     gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY) #converts color image to gray space
     
     #measure speed from thymio
@@ -134,7 +118,7 @@ def repeated_function():
     #calculate velocity input
     u = ekf.calc_input(left, right)
     #measure position from camera
-    xTrue, z = ekf.observation(xTrue, u, gray)
+    xTrue, z = ekf.observation(xTrue, u, gray, pixel2mmx, pixel2mmy)
     #run EKF to estimate position
     xEst, PEst = ekf.ekf_estimation(xEst, PEst, z, u)
     #print(xEst)
@@ -212,7 +196,6 @@ for point in path:
 # my_th.turn(90)
 # my_th.go_straight(100)
 
-print(path)
 rt_motion.stop()
 my_th.stop()
 cap.release()

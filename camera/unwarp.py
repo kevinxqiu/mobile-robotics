@@ -3,13 +3,26 @@
 Created on Sun Nov 29 16:19:51 2020
 
 @author: Celinna
+
+NOTE:
+The functions order_point and four_point_transform were retrieved from: 
+https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
+
+author: Adrian Rosebrock
+
+
 """
 import numpy as np
 import cv2
-from get_corners import get_corners
-
 
 def order_points(pts):
+    """
+    Order the 4 points of an object in correct order
+    Parameters:
+        pts(np.array): [x,y] coordinates of 4 corner points
+    Returns:
+        rect(np.array): ordered [x,y] coordinates of 4 corners
+    """
     # initialzie a list of coordinates that will be ordered
     # such that the first entry in the list is the top-left,
     # the second entry is the top-right, the third is the
@@ -31,8 +44,15 @@ def order_points(pts):
     return rect
 
 
-
 def four_point_transform(image, pts):
+    """
+    Warp an image so that it is flat using four point transform
+    Parameters:
+        image(img): source image in color
+        pts(np.array): [x,y] coordinates of 4 corner points
+    Returns:
+        warped(img): warped image in color
+    """
     # obtain a consistent order of the points and unpack them
     # individually
     rect = order_points(pts)
@@ -67,19 +87,108 @@ def four_point_transform(image, pts):
 
 
 
-def warp_img(img):
-    #img = cv2.imread("sample-map.jpg")
-    pts = get_corners(img)
-    #print(pts)
-    warped = four_point_transform(img, pts)
-    # show the original and warped images
+def get_corners(img):
+    """
+    Get the corners of a rectangular object (the map) from an image of the map taken at an angle
+    Parameters:
+        image(img): source image in color
+    Returns:
+       approx(np.array): 4x2 array of [x,y] coordinates of 4 corners of the map
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
-    cv2.imshow("Original", img)
-    cv2.imshow("Warped", warped)
+    _, blackAndWhite = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY_INV)
     
-    #cv2.imwrite('warped-img.jpg',warped)
+    # convert img to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = 255-gray
     
-    cv2.waitKey(0)
-
-    return pts
-
+    # do adaptive threshold on gray image
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 17, 1)
+    thresh = 255-thresh
+    
+    # apply morphology
+    kernel = np.ones((3,3), np.uint8)
+    morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+    morph = cv2.morphologyEx(morph, cv2.MORPH_CLOSE, kernel)
+    
+    # separate horizontal and vertical lines to filter out spots outside the rectangle
+    kernel = np.ones((7,3), np.uint8)
+    vert = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel)
+    kernel = np.ones((3,7), np.uint8)
+    horiz = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel)
+    
+    # combine
+    rect = cv2.add(horiz,vert)
+    
+    # thin
+    kernel = np.ones((3,3), np.uint8)
+    rect = cv2.morphologyEx(rect, cv2.MORPH_ERODE, kernel)
+    
+    nlabels, labels, stats, centroids = cv2.connectedComponentsWithStats(rect, None, None, None, 8, cv2.CV_32S)
+    sizes = stats[1:, -1] #get CC_STAT_AREA component
+    img2 = np.zeros((labels.shape), np.uint8)
+    
+    for i in range(0, nlabels - 1):
+        if sizes[i] >= 210:   #filter small dotted regions
+            img2[labels == i + 1] = 255
+    
+    res = img2
+    #res = cv2.bitwise_not(img2)
+    #invert = cv2.bitwise_not(image)
+    
+    
+    # get largest contour
+    contours = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = contours[0] if len(contours) == 2 else contours[1]
+    for c in contours:
+        area_thresh = 0
+        area = cv2.contourArea(c)
+        if area > area_thresh:
+            area = area_thresh
+            big_contour = c
+    
+    # define main island contour approx. and hull
+    #perimeter = cv2.arcLength(big_contour,True)
+    epsilon = 0.01*cv2.arcLength(big_contour,True)
+    approx = cv2.approxPolyDP(big_contour,epsilon,True)
+    #print(approx)
+    r,h,c = approx.shape
+    
+    if r != 4:
+        print('ERROR! Could not find vertices to warp image. Make sure the entire map is shown in the image frame...')
+        pass
+    else:
+        approx = np.reshape(approx,(4,2)) # getting verticies of map from image
+        
+        # get rotated rectangle from contour
+        rot_rect = cv2.minAreaRect(big_contour)
+        box = cv2.boxPoints(rot_rect)
+        box = np.int0(box)
+        #print(box)
+        
+        # draw rotated rectangle on copy of img
+        rot_bbox = img.copy()
+        cv2.drawContours(rot_bbox,[box],0,(0,0,255),2)
+    save = False
+    
+    if save:
+        # write img with red rotated bounding box to disk
+        cv2.imwrite("rectangle_thresh.png", thresh)
+        cv2.imwrite("rectangle_outline.png", rect)
+        cv2.imwrite("rectangle_bounds.png", rot_bbox)
+    
+    show = False
+    if show:
+    # display it
+        cv2.imshow('remove spots',res)
+        cv2.imshow("IMAGE", img)
+        #cv2.imshow("THRESHOLD", thresh)
+        #cv2.imshow("MORPH", morph)
+        #cv2.imshow("VERT", vert)
+        #cv2.imshow("HORIZ", horiz)
+        cv2.imshow("RECT", rect)
+        #cv2.imshow("BBOX", rot_bbox)
+        cv2.waitKey(0)
+    
+    return approx
