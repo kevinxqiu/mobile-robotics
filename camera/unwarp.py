@@ -121,6 +121,7 @@ def get_corners(img):
     sizes = stats[1:, -1] #get CC_STAT_AREA component
     img2 = np.zeros((labels.shape), np.uint8)
     
+    # remove spots
     for i in range(0, nlabels - 1):
         if sizes[i] >= 210:   #filter small dotted regions
             img2[labels == i + 1] = 255
