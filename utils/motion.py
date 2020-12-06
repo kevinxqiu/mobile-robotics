@@ -40,8 +40,9 @@ class Robot():
         self.th = th
         #self.rt_speed = RepeatedTimer(1, self.get_speed) # it auto-starts, no need of rt.start()
         self.rt = RepeatedTimer(0.4, self.test_saw_wall) # it auto-starts, no need of rt.start()
+        
         self.flag_local = False
-        self.flag_skip = False
+        self.flag_skip = 0
 
     def get_position(self):
         """
@@ -139,11 +140,11 @@ class Robot():
         
     def time_move(self, target_time):
         t=0
-        while t < target_time:
+        while t <= target_time:
 
             if not self.flag_local:
-                t += 0.05
-                time.sleep(0.05)
+                t += 0.1
+                time.sleep(0.1)
             else:
                 t= target_time
                 while self.flag_local:
@@ -166,13 +167,12 @@ class Robot():
         else: #if turn_angle = 0, do not waste time
             return False
 
-        #time.sleep(target_time)
-        self.time_move(target_time)
+        time.sleep(target_time)
+        #self.time_move(target_time)
         t_end = time.time()
 
         print("actual_turn_took:{} s".format(t_end-t_0), "\n")
 
-        #time.sleep(0.1)
 
     def move(self, l_speed=100, r_speed=100, verbose=False):
         # Printing the speeds if requested
@@ -190,19 +190,18 @@ class Robot():
     def stop(self):
         self.move(l_speed=0, r_speed=0)
 
-        #time.sleep(0.1)
 
-    def test_saw_wall(self, thread=True, wall_threshold=500, verbose=True):
+    def test_saw_wall(self, thread=True, wall_threshold=500, verbose=False):
         if any([x>wall_threshold for x in self.th['prox.horizontal'][:-2]]):
             if verbose: print("\t\t Saw a wall")
             if thread:
                 self.rt.stop() #we stop the thread to not execute test_saw_wall another time
                 self.flag_local = True
-                self.flag_skip = True
+                self.flag_skip = 2
                 # Start following wall of obstacle
                 self.wall_following(verbose=verbose)
-                self.rt.start()
                 self.flag_local = False
+                self.rt.start()
             else: #we also use test_saw_wall to check if there is STILL a wall (in the wall_folowing function), so we put thread false
                 return True
         return False #to test, not sure we can return smg with the timer, if not, just change the function to return only when thread is false

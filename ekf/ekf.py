@@ -138,7 +138,6 @@ def observation(xTrue, u, warped):
     # add noise to gps x-y
     #measure camera
     camera_pos = get_video.get_video(warped)
-    print(camera_pos)
     z = observation_model(camera_pos)
 
     # add noise to input

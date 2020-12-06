@@ -82,7 +82,7 @@ def detect_thymio(img,pixel2mmx,pixel2mmy):
 #   MAIN LOOP
 #=============================================================================================================================================================================================='
 
-cap = cv2.VideoCapture(1) # might not be 1, depending on computer
+# cap = cv2.VideoCapture(1) # might not be 1, depending on computer
 
 def init_video(cap, save_img):
     # First we get the warped image
@@ -134,5 +134,5 @@ def get_video(img):
 
 
 # When everything done, release the capture
-cap.release()
-cv2.destroyAllWindows()
+# cap.release()
+# cv2.destroyAllWindows()

@@ -39,11 +39,8 @@ gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 
 # Map size is 1188 x 840
 X,Y = gray.shape # X and Y are flipped here
-
 pixel2mmx = 840 / X
 pixel2mmy = 1188 / Y
-# pixel2mmx = 2.56
-# pixel2mmy = 2.14
 
 pos, ang = get_video.detect_thymio(gray,pixel2mmx,pixel2mmy)
 
@@ -55,31 +52,23 @@ if save_img:
     cv2.imwrite('map2.jpg',warped)
 
 
+
+# Start video capture saving
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+out = cv2.VideoWriter('output_vid.avi', fourcc, 20.0, (Y,X))
+
 '''
 RUN PATH PLANNING
 '''
 # start and goal position
 # Map size is 1188 x 840
 start = np.array([pos[0], pos[1]]).astype(int)
-end = np.array([1050, 200]).astype(int)
+end = np.array([1020, 200]).astype(int)
 
 img = 'map2.jpg'
 gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-# Isolate green layer
-# b, g, r = cv2.split(img)
-# (thresh, g) = cv2.threshold(g, 127, 255, cv2.THRESH_BINARY)
 
-# M = cv2.moments(g)
-# if M["m00"] != 0 :
-#     cX = int(M["m10"] / M["m00"])
-#     cY = int(M["m01"] / M["m00"])
-#     start = [cX,cY]
-# else:
-#     start = []
-
-#print(np.rad2deg(ang))
-#print(pos)
-show_animation = False
+show_animation = True
 path  = voronoi_road_map.get_path(gray,show_animation,start,end)
 
 
@@ -87,7 +76,7 @@ path  = voronoi_road_map.get_path(gray,show_animation,start,end)
 INITIALIZE THYMIO
 '''
 #/dev/cu.usbmodem141101	/dev/cu.usbmodem141401
-th = Thymio.serial(port='COM4', refreshing_rate=0.1) #/dev/ttyACM0 for linux
+th = Thymio.serial(port='COM5', refreshing_rate=0.1) #/dev/ttyACM0 for linux
 my_th = Robot(th)
 my_th.set_position([start[0],start[1],np.rad2deg(ang)])
 
@@ -111,11 +100,25 @@ hxTrue = xTrue
 #hxDR = xTrue
 hz = np.zeros((5, 1))
 
+def video_cam():
+    ret, frame = cap.read()
+    warped = unwarp.four_point_transform(frame, pts)
+    #corners, ids, rejectedImgPoints = aruco.detectMarkers(warped, aruco_dict)
+    #corners = np.array(corners)
+    
+    #Y,X = img.shape
+    # Plot identified markers, if any
+    #if ids is not None:
+    #    frame_markers = aruco.drawDetectedMarkers(img, corners, ids,borderColor = (0,0,255))
+    
+    cv2.imshow('Image',warped)
+    out.write(warped)
+    cv2.waitKey()
+    
+    
 def repeated_function():
     #global curr_speed, left, right
     global xEst, xTrue, PEst, hxEst, hxTrue, hz
-    global hpos
-    hpos = []
     #xDR,
     #hxDR,
     
@@ -123,7 +126,7 @@ def repeated_function():
     warped = unwarp.four_point_transform(frame, pts)
     # Print original live video feed
 
-    warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY) #converts color image to gray space
+    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY) #converts color image to gray space
     
     #measure speed from thymio
     curr_speed = my_th.get_speed()
@@ -131,14 +134,13 @@ def repeated_function():
     #calculate velocity input
     u = ekf.calc_input(left, right)
     #measure position from camera
-    xTrue, z = ekf.observation(xTrue, u, warped)
+    xTrue, z = ekf.observation(xTrue, u, gray)
     #run EKF to estimate position
     xEst, PEst = ekf.ekf_estimation(xEst, PEst, z, u)
     #print(xEst)
     #correct position from estimate
     my_th.set_position([xEst[0][0], xEst[1][0], np.rad2deg(xEst[2][0])])
-    print(' position:', my_th.get_position())
-    hpos.append(my_th.get_position)
+    #print(' position:', my_th.get_position())
     # store data history
     hxEst = np.hstack((hxEst, xEst))
     #hxDR = np.hstack((hxDR, xDR))
@@ -167,45 +169,40 @@ def repeated_function():
     #plt.pause(0.001)
     #plt.show()
     
-    cv2.imshow('Image',warped)
-    cv2.waitKey()
+    # color= cv2.cvtColor(warped,cv2.COLOR_GRAY2RGB)
+    
+    #line_thickness = 2
+    #cv2.line(warped, (x1, y1), (x2, y2), (0, 255, 0), thickness=line_thickness)
+
     
 rt_motion = RepeatedTimer(0.1, repeated_function)
+rt_cam = RepeatedTimer(0.1, video_cam)
 
 #add map readings
 my_th.set_speed(100)
 
-# path = np.array([[ 137, 790],
-#  [ 160, 710],
-#  [ 160, 630],
-#  [ 160,  530],
-#  [ 160,  430],
-#  [ 163,  330],
-#  [ 195,  230],
-#  [ 250,  196],
-#  [ 330,  190],
-#  [ 410,  190],
-#  [ 510,  191],
-#  [ 580,  230],
-#  [ 605,  290],
-#  [ 620,  390],
-#  [ 620,  450],
-#  [ 634,  550],
-#  [ 684,  650],
-#  [ 698,  670],
-#  [ 770,  700],
-#  [ 790,  700],
-#  [ 870,  700],
-#  [ 970,  697],
-#  [1030,  730],
-#  [1050,  200]])
+# count = 0
+# for point in path:
+#     if my_th.flag_skip == True and count <= 1:
+#         count += 1
+#         continue
+#         print('hi')
+#     else:
+#         my_th.flag_skip = False
+#         count = 0
+#         my_th.move_to_target([point[0],point[1]]) 
+#         print(' position:', my_th.get_position())
+
 
 for point in path:
-    if my_th.flag_skip == True:
-        my_th.flag_skip = False
+    if my_th.flag_skip > 0:
+        print('skipping point!')
+        my_th.flag_skip -= 1
+                        
         continue
+
     my_th.move_to_target([point[0],point[1]]) 
-    print('My position:', my_th.get_position())
+    print(' position:', my_th.get_position())
 
 #time.sleep(100000)
 #my_th.move_to_target([137, 200])
@@ -214,9 +211,11 @@ for point in path:
 # my_th.go_straight(100)
 # my_th.turn(90)
 # my_th.go_straight(100)
-print(hpos)
 
+print(path)
 rt_motion.stop()
 my_th.stop()
 cap.release()
+out.release()
+
 cv2.destroyAllWindows()

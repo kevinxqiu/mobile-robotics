@@ -19,7 +19,7 @@ while(cap.isOpened()):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     
-    save_img = True
+    save_img = False
     if save_img:
         cv2.imwrite('raw_map.jpg',frame)
         break

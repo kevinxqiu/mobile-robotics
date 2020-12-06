@@ -135,7 +135,7 @@ def get_path(img,show_animation,start,goal):
     print(__file__ + " start!!")
 
     robot_size = 100  # [mm]
-    factor = 20
+    factor = 15
 
     # Convert start and end positions based on new factor size
     start = np.array(start)/factor
@@ -204,12 +204,12 @@ def get_path(img,show_animation,start,goal):
     return path
 
 
-if __name__ == '__main__':
-    # start and goal position
-    start = np.array([130, 700])
-    end = np.array([1020, 200])
+# if __name__ == '__main__':
+#     # start and goal position
+#     start = np.array([130, 700])
+#     end = np.array([1020, 200])
     
-    img = 'map2.jpg'
-    gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-    path  = get_path(gray,True,start,end)
-    #print(path)
+#     img = 'map2.jpg'
+#     gray = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+#     path  = get_path(gray,True,start,end)
+#     print(path)
