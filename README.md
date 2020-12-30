@@ -9,7 +9,7 @@ Incorporate the following elements of mobile robotics onto a [Thymio robot](http
 
 Full project details can be viewed in `final_report.ipynb`.
 
-![Thymio robot](video\thymio_gif.gif)
+![Thymio robot](https://github.com/kevinxqiu/mobile-robotics/blob/main/video/thymio_gif.gif)
 
 ## Authors
 * Mickaël Achkar
