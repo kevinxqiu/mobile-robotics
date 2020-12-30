@@ -1,9 +1,9 @@
 # Autonomous mobile robotics
 Incorporate the following elements of mobile robotics onto a [Thymio robot](https://www.thymio.org/):
 
-* Vision
+* Computer Vision
 * Motion Control
-* Filtering
+* Bayesian Filtering
 * Global Navigation
 * Local Navigation
 
