@@ -1,12 +1,18 @@
-# mobile-robotics
+# Autonomous mobile robotics
+Incorporate the following elements of mobile robotics onto a [Thymio robot](https://www.thymio.org/):
 
-## Usefull Links
+* Vision
+* Motion Control
+* Filtering
+* Global Navigation
+* Local Navigation
 
-### Odometry
+Full project details can be viewed in `final_report.ipynb`.
 
-https://horizongir.wordpress.com/2012/03/15/differential-steering/
-https://www.hilarispublisher.com/open-access/dynamic-modelling-of-differentialdrive-mobile-robots-using-lagrange-and-newtoneuler-methodologies-a-unified-framework-2168-9695.1000107.pdf
+![Thymio robot](video\thymio_gif.gif)
 
-### Thymio Documentation
-
-http://wiki.thymio.org/en:thymioapi#toc11
+## Authors
+* Mickaël Achkar
+* Joachim Honegger
+* Celinna Ju
+* Kevin Qiu
